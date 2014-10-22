@@ -1,0 +1,7 @@
+--timeout 5000
+--reporter spec
+--ui bdd
+--compilers coffee:coffee-script/register
+--check-leaks
+--async-only
+--recursive
