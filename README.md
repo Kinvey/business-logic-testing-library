@@ -72,7 +72,7 @@ var requestObject = {
   headers: {
     'x-kinvey-api-version': 3
   },
-  username: `foobar`
+  username: 'foobar'
 };
 
 var responseObject = {};
@@ -111,7 +111,7 @@ var requestObject = {
   headers: {
     'x-kinvey-api-version': 3
   },
-  username: `foobar`
+  username: 'foobar'
 };
 
 var responseObject = {};
@@ -151,7 +151,7 @@ var requestObject = {
   headers: {
     'x-kinvey-api-version': 3
   },
-  username: `foobar`
+  username: 'foobar'
 };
 
 var responseObject = {};
@@ -190,7 +190,7 @@ var requestObject = {
   headers: {
     'x-kinvey-api-version': 3
   },
-  username: `foobar`
+  username: 'foobar'
 };
 
 var responseObject = {};
