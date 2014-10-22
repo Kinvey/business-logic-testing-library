@@ -127,46 +127,6 @@ tester.runCustomEndpoint('myEndpoint', requestObject, responseObject, function(e
 ```
 
 
-#### runCollectionHook(collectionName, blFunctionName, requestObject, responseObject, callback)
-
-Run the code contained within a collection hook. This method relies on the existence of the collection hook .js file within the BL CLI folder structure. For example, if your collection is called `MyCollection`, and you are running an post-fetch hook, the tester will look for the code at `_blRootPath_/collections/MyCollection/onPostFetch.js`.
-
-##### Arguments
-
-| name | type | description |
-| ---- | ---- | ----------- |
-| collectionName | string | the name of the collection associated with the hook |
-| blFunctionName | string | the hook function to call. One of: `onPreSave`, `onPostSave`, `onPreFetch`, `onPostFetch`, `onPreDelete`, `onPostDelete` |
-| requestObject | JSON | the object made available to the BL code through the `request` variable |
-| responseObject | JSON | the object made available to the BL code through the `response` variable |
-| callback | function | the function that will be called when the BL code has finished executing. This function should accept two parameters: `error` and `blResult`. The response will be a JSON object containing `metadata`, `request` and `response` properties. |
-
-##### Example
-
-```javascript
-var requestObject = {
-  body: {
-    _id: 'abcd'
-  },
-  headers: {
-    'x-kinvey-api-version': 3
-  },
-  username: 'foobar'
-};
-
-var responseObject = {};
-
-tester.runCollectionHook('MyCollection', 'onPreSave', requestObject, responseObject, function(error, blResult) {
-  if (error) {
-    // handle the error
-  }
-  else {
-    console.log("Received response with body:", blResult.response.body);
-  }
-});
-```
-
-
 #### runFunction(codeToRun, requestObject, responseObject, callback)
 
 Run code from a function or a function string. The function must match the custom endpoint signature: `function onRequest(request, response, modules){ ... }`.
