@@ -11,5 +11,29 @@
 # Unauthorized reproduction, transmission or distribution of this file and its
 # contents is a violation of applicable laws.
 
-module.exports =
-  
+class KinveyResponseObject
+  response: null
+
+  constructor: (fromJSON) ->
+    @response = fromJSON ? {}
+
+  setBody: (jsonBody) ->
+    @response.body = jsonBody
+    return this
+
+  setHeaders: (headers) ->
+    @response.headers = headers
+    return this
+
+  addHeader: (header, value) ->
+    @response.headers ?= {}
+    @response.headers[header] = value
+    return this
+
+  setStatusCode: (code) ->
+    @response.status = code
+    return this
+
+  toJSON: () -> @response
+
+module.exports = KinveyResponseObject

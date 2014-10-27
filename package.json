@@ -20,6 +20,8 @@
   "scripts": {
     "test": "mocha test/lib/*",
     "test-unit": "mocha test/lib/tester.test.coffee",
-    "test-integration": "mocha test/lib/integration.test.coffee"
+    "test-integration": "mocha test/lib/integration.test.coffee",
+    "test-request-builder": "mocha test/lib/request-builder.test.coffee",
+    "test-response-builder": "mocha test/lib/response-builder.test.coffee"
   }
 }
