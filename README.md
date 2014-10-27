@@ -204,11 +204,11 @@ tester.runFunction(helloWorld, requestObject, responseObject, function(error, bl
 
 #### createRequestObject(fromJSON)
 
-Create an instance of the request builder, which can be used to construct a request object to pass to the *run* functioned described above. For more details, take a look at the [request builder documentation]() below.
+Create an instance of the request builder, which can be used to construct a request object to pass to the *run* functioned described above. For more details, take a look at the [request builder documentation](#request-builder) below.
 
 #### createResponseObject(fromJSON)
 
-Create an instance of the response builder, which can be used to construct a response object to pass to the *run* functioned described above. For more details, take a look at the [response builder documentation]() below.
+Create an instance of the response builder, which can be used to construct a response object to pass to the *run* functioned described above. For more details, take a look at the [response builder documentation](#response-builder) below.
 
 ## Common code
 
