@@ -6,22 +6,27 @@
     "node": "= 0.10.x"
   },
   "dependencies": {
-    "clone": "^0.1.18",
+    "clone": "0.1.18",
     "coffee-script": "1.8.0",
-    "config": "^1.5.0",
-    "rimraf": "^2.2.8",
+    "config": "1.5.0",
+    "request": "2.48.0",
+    "rimraf": "2.2.8",
     "uuid": "1.4.1"
   },
   "devDependencies": {
-    "mocha": "^1.21.4",
+    "coffeelint": "1.6.1",
+    "mocha": "1.21.4",
+    "proxyquire": "1.0.1",
     "should": "3.3.2",
-    "sinon": "^1.10.3"
+    "sinon": "1.10.3"
   },
   "scripts": {
+    "pretest": "coffeelint lib/*",
     "test": "mocha test/lib/*",
     "test-unit": "mocha test/lib/tester.test.coffee",
     "test-integration": "mocha test/lib/integration.test.coffee",
     "test-request-builder": "mocha test/lib/request-builder.test.coffee",
-    "test-response-builder": "mocha test/lib/response-builder.test.coffee"
+    "test-response-builder": "mocha test/lib/response-builder.test.coffee",
+    "test-data-store": "mocha test/lib/data-store.test.coffee"
   }
 }

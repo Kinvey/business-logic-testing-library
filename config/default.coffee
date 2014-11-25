@@ -1,7 +1,8 @@
 module.exports =
   environmentID: 'BusinessLogicTest'
   containerHostOrIP: 'localhost'
-  containerPort: 8080
+  runnerPort: 7000
+  proxyPort: 2845
 
   directories:
     pathToCommonFiles: 'common'

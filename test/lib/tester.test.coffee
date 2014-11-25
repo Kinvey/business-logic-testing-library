@@ -1,16 +1,4 @@
 # Copyright (c) 2014, Kinvey, Inc. All rights reserved.
-# 
-# This software is licensed to you under the Kinvey terms of service located at
-# http://www.kinvey.com/terms-of-use. By downloading, accessing and/or using this
-# software, you hereby accept such terms of service  (and any agreement referenced
-# therein) and agree that you have read, understand and agree to be bound by such
-# terms of service and are of legal age to agree to such terms with Kinvey.
-# 
-# This software contains valuable confidential and proprietary information of
-# KINVEY, INC and is subject to applicable licensing agreements.
-# Unauthorized reproduction, transmission or distribution of this file and its
-# contents is a violation of applicable laws.
-# Copyright (c) 2014, Kinvey, Inc. All rights reserved.
 #
 # This software is licensed to you under the Kinvey terms of service located at
 # http://www.kinvey.com/terms-of-use. By downloading, accessing and/or using this
@@ -45,16 +33,23 @@ describe 'Business Logic Tester / unit tests', () ->
 
   netMock = {}
 
-  tester = proxyquire '../../lib/tester', { net: netMock }
+  childProcessMock =
+    exec: sinon.mock()
 
-  executeTesterMethodThroughMock = (methodName, methodArguments...) ->
+  childProcessMock.exec.callsArg 1
+
+  testModule = proxyquire '../../lib/tester', { net: netMock, child_process: childProcessMock }
+
+  dockerHost = process.env.DOCKER_HOST
+
+  executeTesterMethodThroughMock = (tester, methodName, methodArguments...) ->
     socketMock.write.reset()
 
     originalCallback = methodArguments[methodArguments.length - 1]
     methodArguments[methodArguments.length - 1] = () ->
       originalCallback JSON.parse socketMock.write.args[0]
 
-    tester[methodName].apply null, methodArguments
+    tester[methodName].apply tester, methodArguments
 
     setTimeout () ->
       should.exist socketEventListeners['data']
@@ -62,6 +57,8 @@ describe 'Business Logic Tester / unit tests', () ->
     , 5
 
   before (done) ->
+    delete process.env.DOCKER_HOST
+    
     # create BL file structure
     fs.mkdirSync tempBlDirectoryName
 
@@ -71,36 +68,30 @@ describe 'Business Logic Tester / unit tests', () ->
     done()
 
   after (done) ->
+    process.env.DOCKER_HOST = dockerHost
+
     # remove the temporary BL directory and all its contents
     rimraf tempBlDirectoryName, done
 
-  describe 'configuration', () ->
-    it 'methods fail if module has not been configured', (done) ->
-      tester.runFunction null, null, null, (err) ->
-        should.exist err
-        err.name.should.eql 'BLConfiguraionRequiredError'
-        tester.runCollectionHook null, null, null, null, (err) ->
-          should.exist err
-          err.name.should.eql 'BLConfiguraionRequiredError'
-          tester.runCustomEndpoint null, null, null, (err) ->
-            should.exist err
-            err.name.should.eql 'BLConfiguraionRequiredError'
-            done()
+  afterEach (done) ->
+    childProcessMock.exec.reset()
+    done()
 
+  describe 'configuration', () ->
     it 'creates a connection to the specified docker host and port', (done) ->
       netMock.createConnection = sinon.mock()
       netMock.createConnection.returns socketMock
 
       options =
         quiet: true
-        containerPort: 'docker.port.test'
+        runnerPort: 'docker.port.test'
         containerHostOrIP: '10.10.10.10'
 
-      tester.configure options
-
-      tester.runFunction testFunctionString, {}, {}
-      netMock.createConnection.calledWith(options.containerPort, options.containerHostOrIP).should.be.true
-      done()
+      testModule.createClient options, (err, tester) ->
+        if err then return done err
+        tester.runFunction testFunctionString, {}, {}
+        netMock.createConnection.calledWith(options.runnerPort, options.containerHostOrIP).should.be.true
+        done()
 
     it 'uses defaults from config file if host and port are not specified', (done) ->
       netMock.createConnection = sinon.mock()
@@ -109,11 +100,43 @@ describe 'Business Logic Tester / unit tests', () ->
       options =
         quiet: true
 
-      tester.configure options
+      testModule.createClient options, (err, tester) ->
+        if err then return done err
+        tester.runFunction testFunctionString, {}, {}
+        netMock.createConnection.calledWith(config.runnerPort, config.containerHostOrIP).should.be.true
+        done()
 
-      tester.runFunction testFunctionString, {}, {}
-      netMock.createConnection.calledWith(config.containerPort, config.containerHostOrIP).should.be.true
-      done()
+
+    it 'uses DOCKER_HOST if defined', (done) ->
+      netMock.createConnection = sinon.mock()
+      netMock.createConnection.returns socketMock
+
+      process.env.DOCKER_HOST = 'tcp://test-docker-host:port'
+
+      options =
+        quiet: true
+
+      testModule.createClient options, (err, tester) ->
+        if err then return done err
+        tester.runFunction testFunctionString, {}, {}
+        netMock.createConnection.calledWith(config.runnerPort, 'test-docker-host').should.be.true
+        delete process.env.DOCKER_HOST
+        done()
+
+    it "uses output from 'docker ps', if available, to find port mappings", (done) ->
+      netMock.createConnection = sinon.mock()
+      netMock.createConnection.returns socketMock
+
+      options =
+        quiet: true
+
+      childProcessMock.exec.callsArgWith 1, null, "888888->#{config.proxyPort}, 222222->#{config.runnerPort}"
+
+      testModule.createClient options, (err, tester) ->
+        if err then return done err
+        tester.runFunction testFunctionString, {}, {}
+        netMock.createConnection.calledWith('222222', config.containerHostOrIP).should.be.true
+        done()
 
     it 'accepts environmentID config option', (done) ->
       netMock.createConnection = (port, host, callback) ->
@@ -124,12 +147,12 @@ describe 'Business Logic Tester / unit tests', () ->
         quiet: true
         environmentID: 'testing-environment-id'
 
-      tester.configure options
-      
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
-        parsedJSONTask.should.have.property 'appId'
-        parsedJSONTask.appId.should.eql options.environmentID
-        done()
+      testModule.createClient options, (err, tester) ->
+        if err then return done err
+        executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+          parsedJSONTask.should.have.property 'appId'
+          parsedJSONTask.appId.should.eql options.environmentID
+          done()
 
     it 'uses default environmentID from config file if not specified', (done) ->
       netMock.createConnection = (port, host, callback) ->
@@ -139,12 +162,12 @@ describe 'Business Logic Tester / unit tests', () ->
       options =
         quiet: true
 
-      tester.configure options
-      
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
-        parsedJSONTask.should.have.property 'appId'
-        parsedJSONTask.appId.should.eql config.environmentID
-        done()
+      testModule.createClient options, (err, tester) ->
+        if err then return done err
+        executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+          parsedJSONTask.should.have.property 'appId'
+          parsedJSONTask.appId.should.eql config.environmentID
+          done()
 
     it 'accepts appSecret config option', (done) ->
       netMock.createConnection = (port, host, callback) ->
@@ -155,12 +178,12 @@ describe 'Business Logic Tester / unit tests', () ->
         quiet: true
         appSecret: 'testing-environment-app-secret'
 
-      tester.configure options
-      
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
-        parsedJSONTask.appMetadata.should.have.property 'appsecret'
-        parsedJSONTask.appMetadata.appsecret.should.eql options.appSecret
-        done()
+      testModule.createClient options, (err, tester) ->
+        if err then return done err
+        executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+          parsedJSONTask.appMetadata.should.have.property 'appsecret'
+          parsedJSONTask.appMetadata.appsecret.should.eql options.appSecret
+          done()
 
     it 'generates an appSecret based on the environment ID if one is not specified', (done) ->
       netMock.createConnection = (port, host, callback) ->
@@ -170,12 +193,12 @@ describe 'Business Logic Tester / unit tests', () ->
       options =
         quiet: true
 
-      tester.configure options
-      
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
-        parsedJSONTask.appMetadata.should.have.property 'appsecret'
-        parsedJSONTask.appMetadata.appsecret.should.eql "#{config.environmentID}-app-secret"
-        done()
+      testModule.createClient options, (err, tester) ->
+        if err then return done err
+        executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+          parsedJSONTask.appMetadata.should.have.property 'appsecret'
+          parsedJSONTask.appMetadata.appsecret.should.eql "#{config.environmentID}-app-secret"
+          done()
 
     it 'accepts masterSecret config option', (done) ->
       netMock.createConnection = (port, host, callback) ->
@@ -186,12 +209,12 @@ describe 'Business Logic Tester / unit tests', () ->
         quiet: true
         masterSecret: 'testing-environment-app-secret'
 
-      tester.configure options
-      
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
-        parsedJSONTask.appMetadata.should.have.property 'mastersecret'
-        parsedJSONTask.appMetadata.mastersecret.should.eql options.masterSecret
-        done()
+      testModule.createClient options, (err, tester) ->
+        if err then return done err
+        executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+          parsedJSONTask.appMetadata.should.have.property 'mastersecret'
+          parsedJSONTask.appMetadata.mastersecret.should.eql options.masterSecret
+          done()
 
     it 'generates an masterSecret based on the environment ID if one is not specified', (done) ->
       netMock.createConnection = (port, host, callback) ->
@@ -201,33 +224,35 @@ describe 'Business Logic Tester / unit tests', () ->
       options =
         quiet: true
 
-      tester.configure options
-      
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
-        parsedJSONTask.appMetadata.should.have.property 'mastersecret'
-        parsedJSONTask.appMetadata.mastersecret.should.eql "#{config.environmentID}-master-secret"
-        done()
+      testModule.createClient options, (err, tester) ->
+        if err then return done err
+        executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+          parsedJSONTask.appMetadata.should.have.property 'mastersecret'
+          parsedJSONTask.appMetadata.mastersecret.should.eql "#{config.environmentID}-master-secret"
+          done()
 
   describe 'runCollectionHook method', () ->
     collectionHookName = 'testCollectionHook'
+    tester = null
 
     before (done) ->
       options =
         quiet: true
         blRootPath: tempBlDirectoryName
 
-      tester.configure options
+      testModule.createClient options, (err, testerInstance) ->
+        if err then return done err
+        tester = testerInstance
+        collectionDir = path.join options.blRootPath, config.directories.pathToCollections, collectionHookName
+        fs.mkdirSync collectionDir
 
-      collectionDir = path.join options.blRootPath, config.directories.pathToCollections, collectionHookName
-      fs.mkdirSync collectionDir
+        fileName = path.join collectionDir, 'onPreSave.js'
+        fs.writeFileSync fileName, testFunctionString
 
-      fileName = path.join collectionDir, 'onPreSave.js'
-      fs.writeFileSync fileName, testFunctionString
-
-      netMock.createConnection = (port, host, callback) ->
-        setTimeout callback, 5
-        return socketMock
-      done()
+        netMock.createConnection = (port, host, callback) ->
+          setTimeout callback, 5
+          return socketMock
+        done()
 
     afterEach (done) ->
       socketEventListeners = {}
@@ -247,7 +272,7 @@ describe 'Business Logic Tester / unit tests', () ->
         done()
 
     it 'passes the function string to the container', (done) ->
-      executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'blScript'
         parsedJSONTask.blScript.should.eql testFunctionString
         done()
@@ -259,7 +284,7 @@ describe 'Business Logic Tester / unit tests', () ->
         headers:
           'x-kinvey-my-header': 'abc'
 
-      executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreSave', requestObject, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreSave', requestObject, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'request'
         parsedJSONTask.request.body.should.eql requestObject.body
         parsedJSONTask.request.headers.should.eql requestObject.headers
@@ -272,7 +297,7 @@ describe 'Business Logic Tester / unit tests', () ->
         headers:
           'x-kinvey-my-header': 'abc'
 
-      executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreSave', {}, responseObject, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreSave', {}, responseObject, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'response'
         parsedJSONTask.response.body.should.eql responseObject.body
         parsedJSONTask.response.headers.should.eql responseObject.headers
@@ -282,10 +307,10 @@ describe 'Business Logic Tester / unit tests', () ->
       fileName = path.join tempBlDirectoryName, config.directories.pathToCollections, collectionHookName, 'onPostSave.js'
       fs.writeFileSync fileName, testFunctionString
 
-      executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
         parsedJSONTask.request.should.have.property 'method'
         parsedJSONTask.request.method.should.eql 'POST'
-        executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPostSave', {}, {}, (parsedJSONTask) ->
+        executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPostSave', {}, {}, (parsedJSONTask) ->
           parsedJSONTask.request.should.have.property 'method'
           parsedJSONTask.request.method.should.eql 'POST'
           done()
@@ -297,10 +322,10 @@ describe 'Business Logic Tester / unit tests', () ->
       fileName = path.join tempBlDirectoryName, config.directories.pathToCollections, collectionHookName, 'onPostFetch.js'
       fs.writeFileSync fileName, testFunctionString
 
-      executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreFetch', {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreFetch', {}, {}, (parsedJSONTask) ->
         parsedJSONTask.request.should.have.property 'method'
         parsedJSONTask.request.method.should.eql 'GET'
-        executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPostFetch', {}, {}, (parsedJSONTask) ->
+        executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPostFetch', {}, {}, (parsedJSONTask) ->
           parsedJSONTask.request.should.have.property 'method'
           parsedJSONTask.request.method.should.eql 'GET'
           done()
@@ -312,28 +337,28 @@ describe 'Business Logic Tester / unit tests', () ->
       fileName = path.join tempBlDirectoryName, config.directories.pathToCollections, collectionHookName, 'onPostDelete.js'
       fs.writeFileSync fileName, testFunctionString
 
-      executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreDelete', {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreDelete', {}, {}, (parsedJSONTask) ->
         parsedJSONTask.request.should.have.property 'method'
         parsedJSONTask.request.method.should.eql 'DELETE'
-        executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPostDelete', {}, {}, (parsedJSONTask) ->
+        executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPostDelete', {}, {}, (parsedJSONTask) ->
           parsedJSONTask.request.should.have.property 'method'
           parsedJSONTask.request.method.should.eql 'DELETE'
           done()
 
     it 'sets the request collection name to runCollectionHook', (done) ->
-      executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
         parsedJSONTask.request.should.have.property 'collectionName'
         parsedJSONTask.request.collectionName.should.eql collectionHookName
         done()
 
     it 'properly sets the targetFunction', (done) ->
-      executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'targetFunction'
         parsedJSONTask.targetFunction.should.eql 'onPreSave'
         done()
 
     it 'sets the hookType to collectionHook', (done) ->
-      executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'hookType'
         parsedJSONTask.hookType.should.eql 'collectionHook'
         done()
@@ -343,7 +368,7 @@ describe 'Business Logic Tester / unit tests', () ->
         params:
           id: 'testId'
 
-      executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreSave', requestObject, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreSave', requestObject, {}, (parsedJSONTask) ->
         parsedJSONTask.request.should.have.property 'entityId'
         parsedJSONTask.request.entityId.should.eql requestObject.params.id
 
@@ -351,7 +376,7 @@ describe 'Business Logic Tester / unit tests', () ->
           params:
             userid: 'testUserId'
 
-        executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreSave', requestObject, {}, (parsedJSONTask) ->
+        executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreSave', requestObject, {}, (parsedJSONTask) ->
           parsedJSONTask.request.should.have.property 'entityId'
           parsedJSONTask.request.entityId.should.eql requestObject.params.userid
           done()
@@ -364,7 +389,7 @@ describe 'Business Logic Tester / unit tests', () ->
         fileName = path.join tempBlDirectoryName, config.directories.pathToCommonFiles, "testCommonBlCode#{i}.js"
         fs.writeFileSync fileName, commonFileContents
 
-      executeTesterMethodThroughMock 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCollectionHook', collectionHookName, 'onPreSave', {}, {}, (parsedJSONTask) ->
         parsedJSONTask.blScript.should.eql commonFiles.join('\n;') + '\n;' + testFunctionString
 
         # cleanup
@@ -375,21 +400,25 @@ describe 'Business Logic Tester / unit tests', () ->
 
   describe 'runCustomEndpoint method', () ->
     endpointName = 'testEndpointName'
+    tester = null
 
     before (done) ->
       options =
         quiet: true
         blRootPath: tempBlDirectoryName
 
-      tester.configure options
+      testModule.createClient options, (err, testerInstance) ->
+        if err then return done err
+        
+        tester = testerInstance
 
-      fileName = path.join options.blRootPath, config.directories.pathToCustomEndpoints, "#{endpointName}.js"
-      fs.writeFileSync fileName, testFunctionString
+        fileName = path.join options.blRootPath, config.directories.pathToCustomEndpoints, "#{endpointName}.js"
+        fs.writeFileSync fileName, testFunctionString
 
-      netMock.createConnection = (port, host, callback) ->
-        setTimeout callback, 5
-        return socketMock
-      done()
+        netMock.createConnection = (port, host, callback) ->
+          setTimeout callback, 5
+          return socketMock
+        done()
 
     afterEach (done) ->
       socketEventListeners = {}
@@ -403,7 +432,7 @@ describe 'Business Logic Tester / unit tests', () ->
         done()
 
     it 'passes the function string to the container', (done) ->
-      executeTesterMethodThroughMock 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'blScript'
         parsedJSONTask.blScript.should.eql testFunctionString
         done()
@@ -415,7 +444,7 @@ describe 'Business Logic Tester / unit tests', () ->
         headers:
           'x-kinvey-my-header': 'abc'
 
-      executeTesterMethodThroughMock 'runCustomEndpoint', endpointName, requestObject, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCustomEndpoint', endpointName, requestObject, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'request'
         parsedJSONTask.request.body.should.eql requestObject.body
         parsedJSONTask.request.headers.should.eql requestObject.headers
@@ -428,32 +457,32 @@ describe 'Business Logic Tester / unit tests', () ->
         headers:
           'x-kinvey-my-header': 'abc'
 
-      executeTesterMethodThroughMock 'runCustomEndpoint', endpointName, {}, responseObject, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCustomEndpoint', endpointName, {}, responseObject, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'response'
         parsedJSONTask.response.body.should.eql responseObject.body
         parsedJSONTask.response.headers.should.eql responseObject.headers
         done()
 
     it 'sets the request method to POST', (done) ->
-      executeTesterMethodThroughMock 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
         parsedJSONTask.request.should.have.property 'method'
         parsedJSONTask.request.method.should.eql 'POST'
         done()
 
     it 'sets the request collection name to runCustomEndpoint', (done) ->
-      executeTesterMethodThroughMock 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
         parsedJSONTask.request.should.have.property 'collectionName'
         parsedJSONTask.request.collectionName.should.eql endpointName
         done()
 
     it 'sets the targetFunction to onRequest', (done) ->
-      executeTesterMethodThroughMock 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'targetFunction'
         parsedJSONTask.targetFunction.should.eql 'onRequest'
         done()
 
     it 'sets the hookType to customEndpoint', (done) ->
-      executeTesterMethodThroughMock 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'hookType'
         parsedJSONTask.hookType.should.eql 'customEndpoint'
         done()
@@ -466,7 +495,7 @@ describe 'Business Logic Tester / unit tests', () ->
         fileName = path.join tempBlDirectoryName, config.directories.pathToCommonFiles, "testCommonBlCode#{i}.js"
         fs.writeFileSync fileName, commonFileContents
 
-      executeTesterMethodThroughMock 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCustomEndpoint', endpointName, {}, {}, (parsedJSONTask) ->
         parsedJSONTask.blScript.should.eql commonFiles.join('\n;') + '\n;' + testFunctionString
 
         # cleanup
@@ -480,7 +509,7 @@ describe 'Business Logic Tester / unit tests', () ->
         params:
           id: 'testId'
 
-      executeTesterMethodThroughMock 'runCustomEndpoint', endpointName, requestObject, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runCustomEndpoint', endpointName, requestObject, {}, (parsedJSONTask) ->
         parsedJSONTask.request.should.have.property 'entityId'
         parsedJSONTask.request.entityId.should.eql requestObject.params.id
 
@@ -488,19 +517,24 @@ describe 'Business Logic Tester / unit tests', () ->
           params:
             userid: 'testUserId'
 
-        executeTesterMethodThroughMock 'runCustomEndpoint', endpointName, requestObject, {}, (parsedJSONTask) ->
+        executeTesterMethodThroughMock tester, 'runCustomEndpoint', endpointName, requestObject, {}, (parsedJSONTask) ->
           parsedJSONTask.request.should.have.property 'entityId'
           parsedJSONTask.request.entityId.should.eql requestObject.params.userid
           done()
 
   describe 'runFunction method', () ->
-    before (done) ->
-      tester.configure { quiet: true }
+    tester = null
 
-      netMock.createConnection = (port, host, callback) ->
-        setTimeout callback, 5
-        return socketMock
-      done()
+    before (done) ->
+      testModule.createClient { quiet: true }, (err, testerInstance) ->
+        if err then return done err
+
+        tester = testerInstance
+
+        netMock.createConnection = (port, host, callback) ->
+          setTimeout callback, 5
+          return socketMock
+        done()
 
     afterEach (done) ->
       socketEventListeners = {}
@@ -508,7 +542,7 @@ describe 'Business Logic Tester / unit tests', () ->
       done()
 
     it 'passes the function string to the container', (done) ->
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'blScript'
         parsedJSONTask.blScript.should.eql testFunctionString
         done()
@@ -520,7 +554,7 @@ describe 'Business Logic Tester / unit tests', () ->
         headers:
           'x-kinvey-my-header': 'abc'
 
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, requestObject, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, requestObject, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'request'
         parsedJSONTask.request.body.should.eql requestObject.body
         parsedJSONTask.request.headers.should.eql requestObject.headers
@@ -533,32 +567,32 @@ describe 'Business Logic Tester / unit tests', () ->
         headers:
           'x-kinvey-my-header': 'abc'
 
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, responseObject, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, responseObject, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'response'
         parsedJSONTask.response.body.should.eql responseObject.body
         parsedJSONTask.response.headers.should.eql responseObject.headers
         done()
 
     it 'sets the request method to POST', (done) ->
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
         parsedJSONTask.request.should.have.property 'method'
         parsedJSONTask.request.method.should.eql 'POST'
         done()
 
     it 'sets the request collection name to runFunction', (done) ->
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
         parsedJSONTask.request.should.have.property 'collectionName'
         parsedJSONTask.request.collectionName.should.eql 'runFunction'
         done()
 
     it 'sets the targetFunction to onRequest', (done) ->
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'targetFunction'
         parsedJSONTask.targetFunction.should.eql 'onRequest'
         done()
 
     it 'sets the hookType to customEndpoint', (done) ->
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
         parsedJSONTask.should.have.property 'hookType'
         parsedJSONTask.hookType.should.eql 'customEndpoint'
         done()
@@ -568,30 +602,31 @@ describe 'Business Logic Tester / unit tests', () ->
         quiet: true
         blRootPath: tempBlDirectoryName
 
-      tester.configure options
+      testModule.createClient options, (err, tester) ->
+        if err then return done err
 
-      commonFiles = ['var helped = false;\nvar helperFunction = function(){\n  helped = true;\n}',
-                     'var helped2 = false;\nvar helperFunction2 = function(){\n  helped2 = true;\n}']
+        commonFiles = ['var helped = false;\nvar helperFunction = function(){\n  helped = true;\n}',
+                       'var helped2 = false;\nvar helperFunction2 = function(){\n  helped2 = true;\n}']
 
-      for commonFileContents, i in commonFiles
-        fileName = path.join options.blRootPath, config.directories.pathToCommonFiles, "testCommonBlCode#{i}.js"
-        fs.writeFileSync fileName, commonFileContents
+        for commonFileContents, i in commonFiles
+          fileName = path.join options.blRootPath, config.directories.pathToCommonFiles, "testCommonBlCode#{i}.js"
+          fs.writeFileSync fileName, commonFileContents
 
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
-        parsedJSONTask.blScript.should.eql commonFiles.join('\n;') + '\n;' + testFunctionString
-        
-        # cleanup
-        commonFileDir = path.join tempBlDirectoryName, config.directories.pathToCommonFiles
-        rimraf commonFileDir, () ->
-          fs.mkdir commonFileDir
-          done()
+        executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
+          parsedJSONTask.blScript.should.eql commonFiles.join('\n;') + '\n;' + testFunctionString
+          
+          # cleanup
+          commonFileDir = path.join tempBlDirectoryName, config.directories.pathToCommonFiles
+          rimraf commonFileDir, () ->
+            fs.mkdir commonFileDir
+            done()
 
     it 'sets the request entityId to request.params.id or request.params.userid', (done) ->
       requestObject =
         params:
           id: 'testId'
 
-      executeTesterMethodThroughMock 'runFunction', testFunctionString, requestObject, {}, (parsedJSONTask) ->
+      executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, requestObject, {}, (parsedJSONTask) ->
         parsedJSONTask.request.should.have.property 'entityId'
         parsedJSONTask.request.entityId.should.eql requestObject.params.id
 
@@ -599,7 +634,7 @@ describe 'Business Logic Tester / unit tests', () ->
           params:
             userid: 'testUserId'
 
-        executeTesterMethodThroughMock 'runFunction', testFunctionString, requestObject, {}, (parsedJSONTask) ->
+        executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, requestObject, {}, (parsedJSONTask) ->
           parsedJSONTask.request.should.have.property 'entityId'
           parsedJSONTask.request.entityId.should.eql requestObject.params.userid
           done()

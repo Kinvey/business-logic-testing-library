@@ -13,15 +13,15 @@
 
 should = require 'should'
 tester = require '../../lib/tester'
-KinveyResponseObject = require '../../lib/response-builder.coffee'
+KinveyMockResponse = require '../../lib/mock-response-builder.coffee'
 
 describe 'Business Logic Tester / response object builder', () ->
-  it 'tester.createResponseObject creates an instance of KinveyResponseObject', (done) ->
-    tester.createResponseObject().should.be.an.instanceof KinveyResponseObject
+  it 'tester.createMockResponse creates an instance of KinveyMockResponse', (done) ->
+    tester.createMockResponse().should.be.an.instanceof KinveyMockResponse
     done()
 
   it 'starts as an empty response object', (done) ->
-    responseObject = new KinveyResponseObject()
+    responseObject = new KinveyMockResponse()
     responseObject.toJSON().should.eql {}
     done()
 
@@ -29,7 +29,7 @@ describe 'Business Logic Tester / response object builder', () ->
     body =
       test: 123
 
-    responseObject = new KinveyResponseObject()
+    responseObject = new KinveyMockResponse()
     responseObject.setBody body
     responseObject.toJSON().should.eql { body: body }
     done()
@@ -39,13 +39,13 @@ describe 'Business Logic Tester / response object builder', () ->
       header1: 123
       header2: 'abc'
 
-    responseObject = new KinveyResponseObject()
+    responseObject = new KinveyMockResponse()
     responseObject.setHeaders headers
     responseObject.toJSON().should.eql { headers: headers }
     done()
 
   it 'addHeader adds a header if it does not already exist', (done) ->
-    responseObject = new KinveyResponseObject()
+    responseObject = new KinveyMockResponse()
     responseObject.addHeader 'header1', 123
     responseObject.toJSON().headers.should.eql { header1: 123 }
     done()
@@ -55,14 +55,14 @@ describe 'Business Logic Tester / response object builder', () ->
       header1: 123
       header2: 'abc'
 
-    responseObject = new KinveyResponseObject()
+    responseObject = new KinveyMockResponse()
     responseObject.setHeaders headers
     responseObject.addHeader 'header1', 'abcdef'
     responseObject.toJSON().headers.should.eql { header1: 'abcdef', header2: 'abc' }
     done()
 
   it 'supports setting the response status code', (done) ->
-    responseObject = new KinveyResponseObject()
+    responseObject = new KinveyMockResponse()
     responseObject.setStatusCode 200
     responseObject.toJSON().status.should.eql 200
     done()

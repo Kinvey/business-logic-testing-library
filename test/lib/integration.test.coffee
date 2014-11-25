@@ -12,20 +12,20 @@
 # contents is a violation of applicable laws.
 
 should = require 'should'
-tester = require '../../lib/tester'
-
-# match an IP (any consecutive combination of numbers and dots) in the DOCKER_HOST environment variable
-dockerHostname = process.env.DOCKER_HOST.match(/([\d\.+]+)/)[1]
+testModule = require '../../lib/tester'
 
 describe 'Business Logic Tester / integration tests', () ->
-  before (done) ->
-    options =
-      quiet: true
-      containerPort: 45050
-      containerHostOrIP: dockerHostname
+  tester = null
 
-    tester.configure options
-    done()
+  before (done) ->
+    console.log "================================================================================"
+    console.log " This test assumes that the kinvey tester docker image is running, and that the"
+    console.log " docker hostname is either 'localhost' or specified in the $DOCKER_HOST env var"
+    console.log "================================================================================"
+    testModule.createClient { quiet: true }, (err, testerInstance) ->
+      if err then return done err
+      tester = testerInstance
+      done()
 
   it 'can run a function and return response data', (done) ->
     functionString = 'function onRequest(request, response, modules){ response.body = { testPassed: true }; response.complete(); }'

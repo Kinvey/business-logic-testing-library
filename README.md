@@ -7,21 +7,24 @@ The module serves two purposes:
 1. Integrate with the Kinvey BL CLI tool to support offline testing of BL code.
 2. Allow a developer to run a custom BL function in order to test its validity and behavior.
 
-In order to use the module, you will first need to configure it, and then call one of its API methods. These steps are explained in more detail below.
+In order to use the module, you will first need to create and configure a client instance, and then call one of its API methods. These steps are explained in more detail below.
 
 ## Table of contents
 
-* [Configuration](#configuration)
 * [Methods](#usage)
-  * [configure](#configurejsonConfiguration)
-  * [runCollectionHook](#runcollectionhookcollectionname-blfunctionname-requestobject-responseobject-callback)
-  * [runCustomEndpoint](#runcustomendpointendpointname-requestobject-responseobject-callback)
-  * [runFunction](#runfunctioncodetorun-requestobject-responseobject-callback)
-  * [createRequestObject](#createrequestobjectfromjson)
-  * [createResponseObject](#createresponseobjectfromjson)
+  * [createMockRequest](#createmockrequestfromjson)
+  * [createMockResponse](#createmockresponsefromjson)
+  * [createClient](#createclientjsonconfiguration-callback)
+    * [runCollectionHook](#runcollectionhookcollectionname-blfunctionname-requestobject-responseobject-callback)
+    * [runCustomEndpoint](#runcustomendpointendpointname-requestobject-responseobject-callback)
+    * [runFunction](#runfunctioncodetorun-requestobject-responseobject-callback)
+    * [dateStore](#datastore)
+      * [importCollectionData](#importcollectiondatacollectionname-jsondata-clearbeforeinsert-callback)
+      * [removeCollectionData](#removecollectiondatacollectionname-query-callback)
+      * [getCollectionData](#getcollectiondatacollectionname-query-callback)
 * [Common code](#common-code)
 * [Helpers](#helpers)
-  * [Request builder](#request-builder)
+  * [Mock request builder](#mock-request-builder)
     * [Usage and constructor](#usage-and-constructor)
     * [Chaining](#chaining)
     * [setBody](#setbodyjsonobject)
@@ -32,7 +35,7 @@ In order to use the module, you will first need to configure it, and then call o
     * [setAuthenticatedUsername](#setauthenticatedusernameusername)
     * [setTempObjectStore](#settempobjectstorejsonobject)
     * [toJSON](#tojson)
-  * [Response builder](#response-builder)
+  * [Mock response builder](#mock-response-builder)
     * [Usage and constructor](#usage-and-constructor-1)
     * [Chaining](#chaining-1)
     * [setBody](#setbodyjsonobject-1)
@@ -41,48 +44,64 @@ In order to use the module, you will first need to configure it, and then call o
     * [setStatusCode](#setstatuscodecode)
     * [toJSON](#tojson-1)
 
-## Configuration
+## Usage
 
-The tester module exposes a `configure` method, which accepts a JSON object. This is a synchronous method that simply sets a few internal variables. The structure of the JSON object supports the following properties:
+The module exposes the following API:
+
+### createMockRequest(fromJSON)
+
+Create an instance of the request builder, which can be used to construct a request object to pass to the *run...* function described above. For more details, take a look at the [request builder documentation](#mock-request-builder) below.
+
+### createMockResponse(fromJSON)
+
+Create an instance of the response builder, which can be used to construct a response object to pass to the *run...* function described above. For more details, take a look at the [response builder documentation](#mock-response-builder) below.
+
+### createClient(jsonConfiguration, callback)
+
+Create a client instance, which will be able to communicate with the Business Logic docker container. The `jsonConfiguration` parameter allows you to *optionally* specify configuration options as a JSON object. The structure of the JSON object supports the following properties:
 
 | property name | type | description | default value |
 | ------------- | ---- | ----------- | ------------- |
-| containerHostOrIP | string | the hostname or IP address of the docker container running the BL instance | 'localhost' |
-| containerPort | number | the port of the docker container running the BL instance | 8080 |
 | blRootPath | string | the path to the root of the `business-logic` folder created by using the BL CLI tool | N/A |
 | environmentID | string | the ID of the environment to simulate | 'BusinessLogicTest' |
 | appSecret | string | the app secret of the simulated environment | '_environmentID_-app-secret' |
 | masterSecret | string | the master secret of the simulated environment | '_environmentID_-master-secret' |
+| containerHostOrIP | string | the hostname or IP address of the docker container running the BL instance | $DOCKER_HOST or 'localhost' |
+| runnerPort | number | the port exposed by the instance of the Kinvey BL running in the docker container | 7000 |
+| proxyPort | number | the port exposed by the instance of the Kinvey proxy running in the docker container | 2845 |
 
-*Note* that you do not need to specify all values. Generally, you will want to configure the testing module with the `containerHostOrIP`, `containerPort`, and `blRootPath` parameters. As for the other, environment-specific configuration parameters, these are provided as an option in case your BL code relies on this information.
+*Note* that you do not need to specify all values. Generally, you will want to configure the testing module with the `blRootPath` parameter. The environment-specific configuration parameters are provided as an option in case your BL code relies on this information. The other parameters, which are related to the docker container, will normally be obtained automatically (`containerHostOrIP` will default to the `DOCKER_HOST` environment variable, if defined, and to `localhost` otherwise; `runnerPort` and `proxyPort` will be obtained by inspecting the running docker container), and are only provided here as optional overrides.
 
-### Example
+The callback function should accept two arguments: an error (which will be set to null if no error has occurred), and an instance of the client.
+
+The client instance created using this method exposes the following methods, which are described in detail below:
+
+* [runCollectionHook](#runcollectionhookcollectionname-blfunctionname-requestobject-responseobject-callback)
+* [runCustomEndpoint](#runcustomendpointendpointname-requestobject-responseobject-callback)
+* [runFunction](#runfunctioncodetorun-requestobject-responseobject-callback)
+
+**Example**
 
 ```javascript
 var tester = require('business-logic-testing-library');
 
 var options = {
-  containerHostOrIP: '192.168.59.103',
-  containerPort: 2375,
-  blRootPath: '/Users/foobar/Documents/kinvey/business-logic',
+  blRootPath: '/Users/JohnDoe/Documents/kinvey/business-logic',
   environmentID: 'MyAwesomeEnvironment'
 }
 
-tester.configure(options);
+tester.createClient(options, function(err, client) {
+  if (err) {
+    // handle error
+  }
+
+  client.runFunction( ... );
+});
 ```
-
-## Usage
-
-The module exposes the following API:
-
-#### configure(jsonConfiguration)
-
-Configure the module. Described in detail [above](#Configuration).
-
 
 #### runCollectionHook(collectionName, blFunctionName, requestObject, responseObject, callback)
 
-Run the code contained within a collection hook. This method relies on the existence of the collection hook .js file within the BL CLI folder structure. For example, if your collection is called `MyCollection`, and you are running an post-fetch hook, the tester will look for the code at `_blRootPath_/collections/MyCollection/onPostFetch.js`.
+Run the code contained within a collection hook. This method relies on the existence of the collection hook .js file within the BL CLI folder structure. For example, if your collection is called `MyCollection`, and you are running an post-fetch hook, the tester will look for the code at `_blRootPath_/collections/MyCollection/onPostFetch.js` (where `_blRootPath_` is the path to the root of the BL folder structure, as specified in the options to the [createClient](createclientjsonconfiguration-callback) method).
 
 ##### Arguments
 
@@ -90,8 +109,8 @@ Run the code contained within a collection hook. This method relies on the exist
 | ---- | ---- | ----------- |
 | collectionName | string | the name of the collection associated with the hook |
 | blFunctionName | string | the hook function to call. One of: `onPreSave`, `onPostSave`, `onPreFetch`, `onPostFetch`, `onPreDelete`, `onPostDelete` |
-| requestObject | JSON or request-builder instance | the object made available to the BL code through the `request` variable |
-| responseObject | JSON or response-builder instance | the object made available to the BL code through the `response` variable |
+| requestObject | JSON or mock-request-builder instance | the object made available to the BL code through the `request` variable |
+| responseObject | JSON or mock-response-builder instance | the object made available to the BL code through the `response` variable |
 | callback | function | the function that will be called when the BL code has finished executing. This function should accept two parameters: `error` and `blResult`. The response will be a JSON object containing `metadata`, `request` and `response` properties. |
 
 ##### Example
@@ -109,7 +128,7 @@ var requestObject = {
 
 var responseObject = {};
 
-tester.runCollectionHook('MyCollection', 'onPreSave', requestObject, responseObject, function(error, blResult) {
+client.runCollectionHook('MyCollection', 'onPreSave', requestObject, responseObject, function(error, blResult) {
   if (error) {
     // handle the error
   }
@@ -122,15 +141,15 @@ tester.runCollectionHook('MyCollection', 'onPreSave', requestObject, responseObj
 
 #### runCustomEndpoint(endpointName, requestObject, responseObject, callback)
 
-Run the code contained within a custom endpoint. This method relies on the existence of the endpoint .js file within the BL CLI folder structure. For example, if your endpoint is called `myEndpoint`, the tester will look for the code at `_blRootPath_/endpoints/myEndpoint.js`.
+Run the code contained within a custom endpoint. This method relies on the existence of the endpoint .js file within the BL CLI folder structure. For example, if your endpoint is called `myEndpoint`, the tester will look for the code at `_blRootPath_/endpoints/myEndpoint.js` (where `_blRootPath_` is the path to the root of the BL folder structure, as specified in the options to the [createClient](createclientjsonconfiguration-callback) method).
 
 ##### Arguments
 
 | name | type | description |
 | ---- | ---- | ----------- |
 | endpointName | string | the name of the endpoint you wish to run |
-| requestObject | JSON or request-builder instance | the object made available to the BL code through the `request` variable |
-| responseObject | JSON or response-builder instance | the object made available to the BL code through the `response` variable |
+| requestObject | JSON or mock-request-builder instance | the object made available to the BL code through the `request` variable |
+| responseObject | JSON or mock-response-builder instance | the object made available to the BL code through the `response` variable |
 | callback | function | the function that will be called when the BL code has finished executing. This function should accept two parameters: `error` and `blResult`. The response will be a JSON object containing `metadata`, `request` and `response` properties. |
 
 ##### Example
@@ -148,7 +167,7 @@ var requestObject = {
 
 var responseObject = {};
 
-tester.runCustomEndpoint('myEndpoint', requestObject, responseObject, function(error, blResult) {
+client.runCustomEndpoint('myEndpoint', requestObject, responseObject, function(error, blResult) {
   if (error) {
     // handle the error
   }
@@ -168,8 +187,8 @@ Run code from a function or a function string. The function must match the custo
 | name | type | description |
 | ---- | ---- | ----------- |
 | codeToRun | function or string | code you wish to run |
-| requestObject | JSON or request-builder instance | the object made available to the BL code through the `request` variable |
-| responseObject | JSON or response-builder instance | the object made available to the BL code through the `response` variable |
+| requestObject | JSON or mock-request-builder instance | the object made available to the BL code through the `request` variable |
+| responseObject | JSON or mock-response-builder instance | the object made available to the BL code through the `response` variable |
 | callback | function | the function that will be called when the BL code has finished executing. This function should accept two parameters: `error` and `blResult`. The response will be a JSON object containing `metadata`, `request` and `response` properties. |
 
 ##### Example
@@ -187,12 +206,12 @@ var requestObject = {
 
 var responseObject = {};
 
-var helloWorld = function onRequest(request, resopnse, modules) {
+var helloWorld = function onRequest(request, response, modules) {
   response.body = { 'hello': 'world' };
   response.complete();
 };
 
-tester.runFunction(helloWorld, requestObject, responseObject, function(error, blResult) {
+client.runFunction(helloWorld, requestObject, responseObject, function(error, blResult) {
   if (error) {
     // handle the error
   }
@@ -202,17 +221,115 @@ tester.runFunction(helloWorld, requestObject, responseObject, function(error, bl
 });
 ```
 
-#### createRequestObject(fromJSON)
+#### dataStore
 
-Create an instance of the request builder, which can be used to construct a request object to pass to the *run* functioned described above. For more details, take a look at the [request builder documentation](#request-builder) below.
+The testing container uses [TingoDB](http://github.com/sergeyksv/tingodb) to create a simulated data store and allow your Business Logic code to interact with data through the `collectionAccess` module, much like it normally would. While there are some differences between the API exposed by TingoDB and the one exposed by production instances of Kinvey (which use MongoDB), these are minor, and should allow you to simulate almost everything you wish. If you were to encounter a corner case which is handled differently by TingoDB and MongoDB, please first check the TingoDB documentation before contacting Kinvey support.
 
-#### createResponseObject(fromJSON)
+*Please note* that this data store exists **entirely offline**, within the docker container running on your local machine, and is not connected to Kinvey's production data store.
 
-Create an instance of the response builder, which can be used to construct a response object to pass to the *run* functioned described above. For more details, take a look at the [response builder documentation](#response-builder) below.
+The data store exposes several methods, which can be accessed through the client's `dataStore` object. Detailed information on these methods and examples of their use can be found below.
+
+##### importCollectionData(collectionName, jsonData, clearBeforeInsert, callback)
+
+Allows you to import JSON data into a named collection.
+
+The `jsonData` parameter can contain a JSON object or an array of JSON objects.
+
+The `clearBeforeInsert` parameter, which defaults to `false`, will remove the contents of the collection before importing the data. This may be useful if you wish to be sure that your test environment starts with the same data every time.
+
+The callback function should accept a single error argument, which will be set to null if no error has occurred.
+
+**Example**
+
+```javascript
+var tester = require('business-logic-testing-library');
+var options = { ... };
+
+tester.createClient(options, function(err, client) {
+  if (err) {
+    // handle error
+  }
+
+  var data = [{
+      'first_name': 'John',
+      'last_name': 'Doe'
+    },
+    {
+      'first_name': 'Chuck',
+      'last_name': 'Norris'
+    }];
+
+  client.dataStore.importCollectionData('customers', data, true, function(err) {
+    if (err) {
+      // handle error
+    }
+
+    ...
+  });
+});
+```
+
+##### removeCollectionData(collectionName, query, callback)
+
+Allows you to remove entities from a named collection.
+
+The `query` parameter should contain a MongoDB-style JSON query (for more details on constructing these types of queries, please check [MongoDB's site](http://docs.mongodb.org/manual/tutorial/query-documents/)).
+
+The callback function should accept a single error argument, which will be set to null if no error has occurred.
+
+**Example**
+
+```javascript
+var tester = require('business-logic-testing-library');
+var options = { ... };
+
+tester.createClient(options, function(err, client) {
+  if (err) {
+    // handle error
+  }
+
+  client.dataStore.removeCollectionData('customers', { 'first_name': { '$in': ['John', 'Chuck'] } }, function(err) {
+    if (err) {
+      // handle error
+    }
+
+    ...
+  });
+});
+```
+
+##### getCollectionData(collectionName, query, callback)
+
+Allows you to retrieve entities from a named collection.
+
+The `query` parameter should contain a MongoDB-style JSON query (for more details on constructing these types of queries, please check [MongoDB's site](http://docs.mongodb.org/manual/tutorial/query-documents/)).
+
+The callback function should accept an error argument, which will be set to null if no error has occurred, and a second argument which will contain the retrieved JSON data.
+
+**Example**
+
+```javascript
+var tester = require('business-logic-testing-library');
+var options = { ... };
+
+tester.createClient(options, function(err, client) {
+  if (err) {
+    // handle error
+  }
+
+  client.dataStore.getCollectionData('customers', { 'first_name': { '$in': ['John', 'Chuck'] } }, function(err, entities) {
+    if (err) {
+      // handle error
+    }
+
+    // at this point, the entities variable contains the results of execuring the query against the testing container's data store
+  });
+});
+```
 
 ## Common code
 
-All methods support common code defined within the BL CLI folder structure. When any of the `run...` methods described above are called, the tester will read the contents of all common code files contained within the `_blRootPath_/common/` directory (if any exist), which will be executed before running your collection hook/custom endpoint/function code.
+All methods support common code defined within the BL CLI folder structure. When any of the `run...` methods described above are called, the testing module will read the contents of any common code files contained within the `_blRootPath_/common/` directory (where `_blRootPath_` is the path to the root of the BL folder structure, as specified in the options to the [createClient](createclientjsonconfiguration-callback) method). Any common code will be executed before running your collection hook/custom endpoint/function code.
 
 ##### Example
 
@@ -227,7 +344,7 @@ var timesTwo = function(number) {
 
 
 /**** contents of _blRootPath/custom/myEndpoint.js ***/
-function onRequest(request, resopnse, modules) {
+function onRequest(request, response, modules) {
   response.body = {
     multipliedNumber: timesTwo(parseInt(request.body.number))
   };
@@ -243,7 +360,7 @@ var requestObject = {
   }
 };
 
-tester.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {
+client.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {
   if (error) {
     console.log("Error encountered! details:", error);
   }
@@ -255,21 +372,29 @@ tester.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResu
 
 ## Helpers
 
-### Request builder
+### Mock request builder
 
-In order to run business logic using any of the *run* methods listed on this page, you must pass in a request object. This object contains data and metadata about the (simulated) incoming HTTP request (FROM the client TO Kinvey), and is used to pass necessary information to the testing framework. In order to simplify the use of this object, you can use the `request-builder` helper module, which exposes an API to create a request object.
+In order to run business logic using any of the *run...* methods listed on this page, you must pass in a request object. This object contains data and metadata about the (simulated) incoming HTTP request (FROM the client TO Kinvey), and is used to pass necessary information to the testing framework. In order to simplify the use of this object, you can use the `mock-request-builder` helper module, which exposes an API to create a request object.
 
 #### Usage and constructor
 
-To use the request builder, require the testing module, and then call its createRequestObject method. The constructor optionally accepts a JSON object containing initial values.
+To use the request builder, require the testing module, and then call its createMockRequest method. The constructor optionally accepts a JSON object containing initial values.
 
 ##### Example
 
 ```javascript
 var tester = require('business-logic-testing-library');
+var options = { ... };
 
-var requestObject = tester.createRequetObject({ body: { testing: true }});
-tester.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
+var requestObject = tester.createMockRequest({ body: { testing: true }});
+
+tester.createClient(options, function(err, client) {
+  if (err) {
+    // handle error
+  }
+
+  client.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
+});
 ```
 
 #### Chaining
@@ -278,7 +403,7 @@ With the exception of `toJSON`, all methods of the request builder return the in
 
 ```javascript
 var tester = require('business-logic-testing-library');
-var requestObject = tester.createRequetObject();
+var requestObject = tester.createMockRequest();
 requestObject.setBody({ testing: true }).addHeader('x-kinvey-api-version', 3);
 ```
 
@@ -290,11 +415,11 @@ Set the `body` property of the request object, which corresponds to the body of 
 
 ```javascript
 var tester = require('business-logic-testing-library');
-var requestObject = tester.createRequetObject();
+var requestObject = tester.createMockRequest();
 
 requestObject.setBody({ testing: true });
 
-tester.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
+client.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
 ```
 
 #### setHeaders(jsonObject)
@@ -304,12 +429,11 @@ Set the `headers` property of the request object, which corresponds to the heade
 ##### Example
 
 ```javascript
-var tester = require('business-logic-testing-library');
-var requestObject = tester.createRequetObject();
+var requestObject = tester.createMockRequest();
 
 requestObject.setHeaders({ 'x-kinvey-api-version': 3 });
 
-tester.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
+client.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
 ```
 
 #### addHeader(name, contents)
@@ -319,12 +443,11 @@ Add a header to the `headers` property of the request object, which corresponds 
 ##### Example
 
 ```javascript
-var tester = require('business-logic-testing-library');
-var requestObject = tester.createRequetObject();
+var requestObject = tester.createMockRequest();
 
 requestObject.addHeader('x-kinvey-api-version', 3);
 
-tester.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
+client.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
 ```
 
 #### setParams(jsonObject)
@@ -334,12 +457,11 @@ Set the `params` property of the request object, which corresponds to the parame
 ##### Example
 
 ```javascript
-var tester = require('business-logic-testing-library');
-var requestObject = tester.createRequetObject();
+var requestObject = tester.createMockRequest();
 
 requestObject.setParams({ 'query': { myField: 'myValue' }});
 
-tester.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
+client.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
 ```
 
 #### addParam(name, contents)
@@ -349,12 +471,11 @@ Add a parameter to the `params` property of the request object, which correspond
 ##### Example
 
 ```javascript
-var tester = require('business-logic-testing-library');
-var requestObject = tester.createRequetObject();
+var requestObject = tester.createMockRequest();
 
 requestObject.addParam('query', { myField: 'myValue' });
 
-tester.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
+client.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
 ```
 
 #### setAuthenticatedUsername(username)
@@ -364,23 +485,21 @@ Set the username of the authenticated Kinvey user making the simulated request. 
 ##### Example
 
 ```javascript
-var tester = require('business-logic-testing-library');
-var requestObject = tester.createRequetObject();
+var requestObject = tester.createMockRequest();
 
 requestObject.setAuthenticatedUsername('myUsername');
 
-tester.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
+client.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
 ```
 
 #### setTempObjectStore(jsonObject)
 
-Set the value of the temporary object store available to your business logic code through `modules.utils.tempObjectStore`. For more details, please cehck our [business logic reference](http://devcenter.kinvey.com/rest/reference/business-logic/reference.html#utils-module).
+Set the value of the temporary object store available to your business logic code through `modules.utils.tempObjectStore`. For more details, please check our [business logic reference](http://devcenter.kinvey.com/rest/reference/business-logic/reference.html#utils-module).
 
 ##### Example
 
 ```javascript
-var tester = require('business-logic-testing-library');
-var requestObject = tester.createRequetObject();
+var requestObject = tester.createMockRequest();
 
 var objectStore = {
   myProperty: 'myValue'
@@ -388,7 +507,7 @@ var objectStore = {
 
 requestObject.setTempObjectStore(objectStore);
 
-tester.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
+client.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
 ```
 
 #### toJSON()
@@ -400,7 +519,7 @@ Returns the JSON object representing the request built by this helper.
 ```javascript
 var tester = require('business-logic-testing-library');
 
-var requestObject = tester.createRequetObject({ body: { testing: true }});
+var requestObject = tester.createMockRequest({ body: { testing: true }});
 
 requestObject.setAuthenticatedUsername('myUser');
 
@@ -416,21 +535,29 @@ console.log(requestObject.toJSON());
 */
 ```
 
-### Response builder
+### Mock response builder
 
-In order to run business logic using any of the *run* methods listed on this page, you must pass in a response object. This object contains data and metadata about the (simulated) outgoing HTTP response (FROM Kinvey TO the client). In order to simplify the use of this object, you can use the `response-builder` helper module, which exposes an API to create a response object.
+In order to run business logic using any of the *run...* methods listed on this page, you must pass in a response object. This object contains data and metadata about the (simulated) outgoing HTTP response (FROM Kinvey TO the client). In order to simplify the use of this object, you can use the `mock-response-builder` helper module, which exposes an API to create a response object.
 
 #### Usage and constructor
 
-To use the response builder, require the testing module, and then call its createResponseObject method. The constructor optionally accepts a JSON object containing initial values.
+To use the response builder, require the testing module, and then call its createMockResponse method. The constructor optionally accepts a JSON object containing initial values.
 
 ##### Example
 
 ```javascript
 var tester = require('business-logic-testing-library');
+var options = { ... };
 
-var responseObject = tester.createResponseObject({ body: { testing: true }});
-tester.runCustomEndpoint('myEndpoint', {}, responseObject, function(error, blResult) {});
+var responseObject = tester.createMockResponse({ body: { testing: true }});
+
+tester.createClient(options, function(err, client) {
+  if (err) {
+    // handle error
+  }
+
+  client.runCustomEndpoint('myEndpoint', {}, responseObject, function(error, blResult) {});
+});
 ```
 
 #### Chaining
@@ -439,7 +566,7 @@ With the exception of `toJSON`, all methods of the response builder return the i
 
 ```javascript
 var tester = require('business-logic-testing-library');
-var responseObject = tester.createResponseObject();
+var responseObject = tester.createMockResponse();
 responseObject.setBody({ testing: true }).setStatusCode(200);
 ```
 
@@ -450,12 +577,11 @@ Set the `body` property of the response object, which corresponds to the body of
 ##### Example
 
 ```javascript
-var tester = require('business-logic-testing-library');
-var responseObject = tester.createResponseObject();
+var responseObject = tester.createMockResponse();
 
 responseObject.setBody({ testing: true });
 
-tester.runCustomEndpoint('myEndpoint', {}, responseObject, function(error, blResult) {});
+client.runCustomEndpoint('myEndpoint', {}, responseObject, function(error, blResult) {});
 ```
 
 #### setHeaders(jsonObject)
@@ -465,12 +591,11 @@ Set the `headers` property of the response object, which corresponds to the head
 ##### Example
 
 ```javascript
-var tester = require('business-logic-testing-library');
-var responseObject = tester.createResponseObject();
+var responseObject = tester.createMockResponse();
 
 responseObject.setHeaders({ 'x-kinvey-api-version': 3 });
 
-tester.runCustomEndpoint('myEndpoint', {}, responseObject, function(error, blResult) {});
+client.runCustomEndpoint('myEndpoint', {}, responseObject, function(error, blResult) {});
 ```
 
 #### addHeader(name, contents)
@@ -480,12 +605,11 @@ Add a header to the `headers` property of the response object, which corresponds
 ##### Example
 
 ```javascript
-var tester = require('business-logic-testing-library');
-var responseObject = tester.createResponseObject();
+var responseObject = tester.createMockResponse();
 
 responseObject.addHeader('x-kinvey-api-version', 3);
 
-tester.runCustomEndpoint('myEndpoint', {}, responseObject, function(error, blResult) {});
+client.runCustomEndpoint('myEndpoint', {}, responseObject, function(error, blResult) {});
 ```
 
 #### setStatusCode(code)
@@ -495,12 +619,11 @@ Set the status code of the response object, which corresponds to the HTTP status
 ##### Example
 
 ```javascript
-var tester = require('business-logic-testing-library');
-var responseObject = tester.createResponseObject();
+var responseObject = tester.createMockResponse();
 
 responseObject.setStatusCode(200);
 
-tester.runCustomEndpoint('myEndpoint', {}, responseObject, function(error, blResult) {});
+client.runCustomEndpoint('myEndpoint', {}, responseObject, function(error, blResult) {});
 ```
 
 #### toJSON()
@@ -512,7 +635,7 @@ Returns the JSON object representing the response built by this helper.
 ```javascript
 var tester = require('business-logic-testing-library');
 
-var responseObject = tester.createResponseObject({ body: { testing: true }});
+var responseObject = tester.createMockResponse({ body: { testing: true }});
 
 responseObject.setStatusCode(200);
 
