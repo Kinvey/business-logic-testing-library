@@ -1,7 +1,9 @@
 {
   "name": "business-logic-tester",
-  "version": "0.0.1",
+  "version": "0.1.0-dev",
   "description": "Business Logic Tester",
+  "license": "Apache-2.0",
+  "author": "Kinvey Inc",
   "engines": {
     "node": "= 0.10.x"
   },
@@ -21,8 +23,8 @@
     "sinon": "1.10.3"
   },
   "scripts": {
-    "pretest": "coffeelint lib/*",
-    "test": "mocha test/lib/*",
+    "pretest": "coffeelint lib/ test/",
+    "test": "mocha",
     "test-unit": "mocha test/lib/tester.test.coffee",
     "test-integration": "mocha test/lib/integration.test.coffee",
     "test-request-builder": "mocha test/lib/request-builder.test.coffee",

@@ -111,6 +111,7 @@ runBLCodeString = (configuration, blCodeString, isCollectionHook, collectionOrEn
       appsecret: configuration.appSecret
       mastersecret: configuration.masterSecret
     blScript: blCodeString
+    proxyURL: "http://#{configuration.containerHostOrIP}:#{configuration.proxyPort}"
     request: request
     response: response
     targetFunction: blFunctionName

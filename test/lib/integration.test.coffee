@@ -18,10 +18,10 @@ describe 'Business Logic Tester / integration tests', () ->
   tester = null
 
   before (done) ->
-    console.log "================================================================================"
-    console.log " This test assumes that the kinvey tester docker image is running, and that the"
-    console.log " docker hostname is either 'localhost' or specified in the $DOCKER_HOST env var"
-    console.log "================================================================================"
+    console.log '================================================================================'
+    console.log ' This test assumes that the kinvey tester docker image is running, and that the'
+    console.log ' docker hostname is either \'localhost\' or specified in the $DOCKER_HOST env var'
+    console.log '================================================================================'
     testModule.createClient { quiet: true }, (err, testerInstance) ->
       if err then return done err
       tester = testerInstance

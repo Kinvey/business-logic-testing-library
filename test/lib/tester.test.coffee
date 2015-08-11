@@ -53,12 +53,12 @@ describe 'Business Logic Tester / unit tests', () ->
 
     setTimeout () ->
       should.exist socketEventListeners['data']
-      socketEventListeners['data'](JSON.stringify({}) + '\n')  
+      socketEventListeners['data'](JSON.stringify({}) + '\n')
     , 5
 
   before (done) ->
     delete process.env.DOCKER_HOST
-    
+
     # create BL file structure
     fs.mkdirSync tempBlDirectoryName
 
@@ -409,7 +409,7 @@ describe 'Business Logic Tester / unit tests', () ->
 
       testModule.createClient options, (err, testerInstance) ->
         if err then return done err
-        
+
         tester = testerInstance
 
         fileName = path.join options.blRootPath, config.directories.pathToCustomEndpoints, "#{endpointName}.js"
@@ -614,7 +614,7 @@ describe 'Business Logic Tester / unit tests', () ->
 
         executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
           parsedJSONTask.blScript.should.eql commonFiles.join('\n;') + '\n;' + testFunctionString
-          
+
           # cleanup
           commonFileDir = path.join tempBlDirectoryName, config.directories.pathToCommonFiles
           rimraf commonFileDir, () ->

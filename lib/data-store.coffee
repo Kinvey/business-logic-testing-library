@@ -13,21 +13,22 @@
 
 request = require 'request'
 
-makeProxyRequest = (url, port, jsonData, callback) ->
+makeProxyRequest = (url, jsonData, callback) ->
   request.post
     url: url
-    port: port
     json: jsonData
     (err, res, body) ->
-      callback err
+      if 2 is parseInt res?.statusCode / 100, 10
+        callback err, body
+      else
+        callback err
 
 class KinveyDataStore
   constructor: (configuration) ->
     unless configuration?.proxyPort? and configuration?.containerHostOrIP?
       throw new Error 'Configuration must contain proxyPort and containerHostOrIP properties'
 
-    @containerHostOrIP = configuration.containerHostOrIP
-    @proxyPort = configuration.proxyPort
+    @base = "http://#{configuration.containerHostOrIP}:#{configuration.proxyPort}"
 
   importCollectionData: (collectionName, jsonData = {}, clearBeforeInsert = false, callback) ->
     unless collectionName?
@@ -37,27 +38,27 @@ class KinveyDataStore
       callback = clearBeforeInsert
       clearBeforeInsert = false
 
-    collectionAccessURL = @containerHostOrIP + '/' + collectionName
+    collectionAccessURL = @base + '/collectionAccess/' + collectionName
 
     if clearBeforeInsert
-      makeProxyRequest "#{collectionAccessURL}/remove", @proxyPort, {}, (err) =>
+      makeProxyRequest "#{collectionAccessURL}/remove", { query: { } }, (err) ->
         if err? then return callback err
-        makeProxyRequest "#{collectionAccessURL}/insert", @proxyPort, jsonData, callback
+        makeProxyRequest "#{collectionAccessURL}/insert", { entity: jsonData }, callback
     else
-      makeProxyRequest "#{collectionAccessURL}/insert", @proxyPort, jsonData, callback
+      makeProxyRequest "#{collectionAccessURL}/insert", { entity: jsonData }, callback
 
   removeCollectionData: (collectionName, query = {}, callback) ->
     unless collectionName?
       return callback new Error 'Please specify the name of a collection into which data will be imported'
 
-    collectionAccessURL = @containerHostOrIP + '/' + collectionName
-    makeProxyRequest "#{collectionAccessURL}/remove", @proxyPort, query, callback
+    collectionAccessURL = @base + '/collectionAccess/' + collectionName
+    makeProxyRequest "#{collectionAccessURL}/remove", { query: query }, callback
 
   getCollectionData: (collectionName, query = {}, callback) ->
     unless collectionName?
       return callback new Error 'Please specify the name of a collection into which data will be imported'
 
-    collectionAccessURL = @containerHostOrIP + '/' + collectionName
-    makeProxyRequest "#{collectionAccessURL}/find", @proxyPort, query, callback
+    collectionAccessURL = @base + '/collectionAccess/' + collectionName
+    makeProxyRequest "#{collectionAccessURL}/find", { query: query }, callback
 
 module.exports = KinveyDataStore
