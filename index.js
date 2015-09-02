@@ -27,5 +27,6 @@ require('coffee-script/register');
 process.env.NODE_CONFIG_DIR = path.join(__dirname, 'config/');
 
 // Exports.
-module.exports = require('./lib/tester');
+module.exports      = require('./lib/tester');
+module.exports.util = require('./lib/util');
 module.exports.ENTRY_POINT = 'index';
