@@ -193,10 +193,12 @@ limitations under the License.
 
 Summary:
 
+ * async-1.14          [MIT] - Used for test utilities.
  * clone-0.1.18        [MIT] - Object cloning.
  * coffee-script-1.8.0 [MIT] - Project language.
  * coffeelint-1.6.1    [MIT] - Linting CoffeeScript.
  * config-1.5.0        [MIT] - Project configuration.
+ * dockerode-2.2       [Apache-2.0] - used for building Docker images.
  * mocha-1.21.4        [MIT] - Testing library.
  * proxyquire-1.0.1    [MIT] - Dependency overrider for testing purposes.
  * request-2.48.0      [Apache-2.0] - HTTP request library.
@@ -208,6 +210,7 @@ Summary:
 
 SECTION 1: BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE LICENSES
 
+   >>> async-1.14
    >>> clone-0.1.18
    >>> coffee-script-1.8.0
    >>> coffeelint-1.6.1
@@ -221,6 +224,7 @@ SECTION 1: BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE LICENSES
 
 SECTION 2: Apache License, V2.0
 
+   >>> dockerode-2.2
    >>> request-2.60
 
 
@@ -232,6 +236,29 @@ SECTION 3: ISC
 --------------- SECTION 1:  BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE LICENSES ----------
 
 BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE is applicable to the following component(s).
+
+>>> async-1.14 (https://github.com/caolan/async/blob/master/LICENSE)
+
+Copyright (c) 2010-2014 Caolan McMahon
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
 
 >>> clone-0.1.18 (https://github.com/pvorb/node-clone/blob/master/LICENSE)
 
@@ -444,6 +471,16 @@ Copyright (c) 2010-2012 Robert Kieffer MIT License - http://opensource.org/licen
 --------------- SECTION 2: Apache License, V2.0 ----------
 
 Apache License, V2.0 is applicable to the following component(s).
+
+>>> dockerode-2.2
+
+  Pedro Dias - @pedromdias
+
+  Licensed under the Apache license, version 2.0 (the "license"); You may not use this file except in compliance with the license. You may obtain a copy of the license at:
+
+  http://www.apache.org/licenses/LICENSE-2.0.html
+  Unless required by applicable law or agreed to in writing, software distributed under the license is distributed on an "as is" basis, without warranties or conditions of any kind, either express or implied. See the license for the specific language governing permissions and limitations under the license.)
+
 
 >>> request-2.48 (https://github.com/request/request/blob/master/LICENSE)
 

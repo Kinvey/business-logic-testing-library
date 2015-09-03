@@ -26,17 +26,24 @@ docker = new Docker()
 
 # Helper to start a container with the specified Docker image.
 startDockerContainer = (imageName, callback) ->
-  docker.pull imageName, (err, stream) ->
+  # Determine if a container with the specified image is already running.
+  docker.listContainers (err, containers) ->
     if err? then callback err
-    else docker.modem.followProgress stream, (err) ->
-      if err? then callback err
-      else docker.createContainer { Image: imageName }, (err, container) ->
-        if err? then callback err
-        else container.start { PublishAllPorts: true }, (err) ->
-          # TODO Fix - this is required somehow.
-          setTimeout ->
-            callback err
-          , 1000
+    else # See if the container is already running.
+      for container in containers
+        if imageName is container.Image
+          return callback() # Already running, stop.
+
+      # No container available, create a new one.
+      async.waterfall [
+        # Pull latest image, and process pull stream.
+        docker.pull.bind docker, imageName
+        docker.modem.followProgress.bind docker.modem
+
+        # Create and start a new container with the pulled image.
+        (data, callback) -> docker.createContainer { Image: imageName }, callback
+        (container, callback) -> container.start { PublishAllPorts: true }, callback
+      ], callback
 
 # Utility to set-up test suite.
 setup = (options, callback) ->
@@ -51,7 +58,10 @@ setup = (options, callback) ->
     tester.createClient.bind tester, options
   ], (err, results) ->
     # Pass the tester client back to the test suite.
-    callback err, results?[1]
+    # TODO Replace the timeout with something more reliable.
+    setTimeout () ->
+      callback err, results?[1]
+    , 1000
 
 # Utility to teardown test suite.
 teardown = (options, callback) ->

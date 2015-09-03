@@ -55,6 +55,9 @@ sendJSONTaskToContainer = (containerHostOrIP, runnerPort, jsonTask, callback) ->
     containerSocket.write JSON.stringify jsonTask
     containerSocket.write '\n'
 
+  # Socker error handler.
+  containerSocket.on 'error', callback
+
 getCommonBLCode = (blRootPath) ->
   try
     fullPathToCommonFiles = path.join blRootPath, config.directories.pathToCommonFiles
