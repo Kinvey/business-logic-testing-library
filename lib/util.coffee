@@ -59,6 +59,7 @@ setup = (options, callback) ->
 
     # Set-up Docker containers.
     container: startDockerContainer.bind null, 'kinvey/blrunner:latest'
+    # TODO Set-up mock proxy container.
 
     # Set-up tester.
     client: tester.createClient.bind tester, options
