@@ -50,17 +50,23 @@ setup = (options, callback) ->
   options.quiet = true # Mute tester warnings.
 
   # Run.
-  async.series [
+  async.series {
+    # Ensure Docker is ready.
+    docker: (callback) ->
+      docker.ping (err) ->
+        if err? then err.message = 'Failed to reach Docker. Are you sure Docker is running properly?'
+        callback err # Continue.
+
     # Set-up Docker containers.
-    startDockerContainer.bind null, 'kinvey/blrunner:latest'
+    container: startDockerContainer.bind null, 'kinvey/blrunner:latest'
 
     # Set-up tester.
-    tester.createClient.bind tester, options
-  ], (err, results) ->
+    client: tester.createClient.bind tester, options
+  }, (err, results) ->
     # Pass the tester client back to the test suite.
     # TODO Replace the timeout with something more reliable.
     setTimeout () ->
-      callback err, results?[1]
+      callback err, results.client
     , 1000
 
 # Utility to teardown test suite.
