@@ -31,6 +31,7 @@
     "test-integration": "mocha test/lib/integration.test.coffee",
     "test-request-builder": "mocha test/lib/request-builder.test.coffee",
     "test-response-builder": "mocha test/lib/response-builder.test.coffee",
-    "test-data-store": "mocha test/lib/data-store.test.coffee"
+    "test-data-store": "mocha test/lib/data-store.test.coffee",
+    "test-util": "mocha test/lib/util.test.coffee"
   }
 }
