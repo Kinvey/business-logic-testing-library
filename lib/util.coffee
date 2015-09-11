@@ -37,7 +37,7 @@ startDockerContainer = (imageName, callback) ->
       # No container available, create a new one.
       async.waterfall [
         # Pull latest image, and process pull stream.
-        docker.pull.bind docker, imageName
+        docker.pull.bind docker, "#{imageName}:latest"
         docker.modem.followProgress.bind docker.modem
 
         # Create and start a new container with the pulled image.
@@ -58,8 +58,8 @@ setup = (options, callback) ->
         callback err # Continue.
 
     # Set-up Docker containers.
-    container: startDockerContainer.bind null, 'kinvey/blrunner:latest'
-    # TODO Set-up mock proxy container.
+    # proxy  : startDockerContainer.bind null, 'kinvey/blmockproxy'
+    runner : startDockerContainer.bind null, 'kinvey/blrunner'
 
     # Set-up tester.
     client: tester.createClient.bind tester, options
