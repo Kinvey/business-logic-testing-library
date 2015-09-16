@@ -57,7 +57,7 @@ setup = (options, callback) ->
         callback err # Continue.
 
     # Set-up Docker containers.
-    proxy  : startDockerContainer.bind null, 'kinvey/blmockproxy'
+    proxy  : startDockerContainer.bind null, 'kinvey/bl-mock-proxy'
     runner : startDockerContainer.bind null, 'kinvey/blrunner'
 
     # Set-up tester.
