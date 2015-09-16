@@ -193,39 +193,39 @@ limitations under the License.
 
 Summary:
 
- * async-1.4        [MIT] - Used for test utilities.
- * clone-0.1.18     [MIT] - Object cloning.
- * coffee-script-1.10 [MIT] - Project language.
- * coffeelint-1.11  [MIT] - Linting CoffeeScript.
- * config-1.16      [MIT] - Project configuration.
- * dockerode-2.2    [Apache-2.0] - used for building Docker images.
- * mocha-2.3        [MIT] - Testing library.
- * proxyquire-1.0.1 [MIT] - Dependency overrider for testing purposes.
- * request-2.62     [Apache-2.0] - HTTP request library.
- * should-7.1       [MIT] - Assertion library.
- * sinon-1.16       [BSD-3-Clause] - Spy, stub, and mock library.
- * rimraf-2.2.8     [ISC] - File removal.
- * uuid-2.0         [MIT] - RFC-compliant UUID generator.
+ * async-1.4.2        [MIT] - Used for test utilities.
+ * clone-0.1.18       [MIT] - Object cloning.
+ * coffee-script-1.10.0 [MIT] - Project language.
+ * coffeelint-1.11.1  [MIT] - Linting CoffeeScript.
+ * config-1.16.0      [MIT] - Project configuration.
+ * dockerode-2.2.2    [Apache-2.0] - used for building Docker images.
+ * mocha-2.3.2        [MIT] - Testing library.
+ * proxyquire-1.0.1   [MIT] - Dependency overrider for testing purposes.
+ * request-2.62.0     [Apache-2.0] - HTTP request library.
+ * should-7.1.0       [MIT] - Assertion library.
+ * sinon-1.16.1       [BSD-3-Clause] - Spy, stub, and mock library.
+ * rimraf-2.2.8       [ISC] - File removal.
+ * uuid-2.0.1         [MIT] - RFC-compliant UUID generator.
 
 
 SECTION 1: BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE LICENSES
 
-   >>> async-1.4
+   >>> async-1.4.2
    >>> clone-0.1.18
-   >>> coffee-script-1.10
-   >>> coffeelint-1.11
-   >>> config-1.16
-   >>> mocha-2.3
+   >>> coffee-script-1.10.0
+   >>> coffeelint-1.11.1
+   >>> config-1.16.0
+   >>> mocha-2.3.2
    >>> proxyquire-1.0.1
-   >>> should-7.1
-   >>> sinon-1.16
-   >>> uuid-2.0
+   >>> should-7.1.0
+   >>> sinon-1.16.1
+   >>> uuid-2.0.1
 
 
 SECTION 2: Apache License, V2.0
 
-   >>> dockerode-2.2
-   >>> request-2.62
+   >>> dockerode-2.2.2
+   >>> request-2.62.0
 
 
 SECTION 3: ISC
@@ -237,7 +237,7 @@ SECTION 3: ISC
 
 BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE is applicable to the following component(s).
 
->>> async-1.4 (https://github.com/caolan/async/blob/master/LICENSE)
+>>> async-1.4.2 (https://github.com/caolan/async/blob/master/LICENSE)
 
 Copyright (c) 2010-2014 Caolan McMahon
 
@@ -282,7 +282,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
->>> coffee-script-1.10 (https://github.com/jashkenas/coffeescript/blob/master/LICENSE)
+>>> coffee-script-1.10.0 (https://github.com/jashkenas/coffeescript/blob/master/LICENSE)
 
 Copyright (c) 2009-2015 Jeremy Ashkenas
 
@@ -308,7 +308,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 
->>> coffeelint-1.11 (https://github.com/clutchski/coffeelint/blob/master/LICENSE)
+>>> coffeelint-1.11.1 (https://github.com/clutchski/coffeelint/blob/master/LICENSE)
 
 CoffeeLint
 Copyright (c) 2011 Matthew Perpick
@@ -332,7 +332,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
->>> config-1.16 (https://github.com/lorenwest/node-config/blob/master/LICENSE)
+>>> config-1.16.0 (https://github.com/lorenwest/node-config/blob/master/LICENSE)
 
 // Copyright 2010-2015, Loren West and other contributors
 
@@ -355,7 +355,7 @@ THE SOFTWARE.
 // IN THE SOFTWARE.
 
 
->>> mocha-2.3 (https://github.com/mochajs/mocha/blob/master/LICENSE)
+>>> mocha-2.3.2 (https://github.com/mochajs/mocha/blob/master/LICENSE)
 
 (The MIT License)
 
@@ -408,7 +408,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 
->>> should-7.1 (https://github.com/shouldjs/should.js/blob/master/LICENSE)
+>>> should-7.1.0 (https://github.com/shouldjs/should.js/blob/master/LICENSE)
 
 Copyright (c) 2010-2014 TJ Holowaychuk <tj@vision-media.ca>
 
@@ -431,7 +431,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
->>> sinon-1.16 (https://github.com/cjohansen/Sinon.JS/blob/master/LICENSE)
+>>> sinon-1.16.1 (https://github.com/cjohansen/Sinon.JS/blob/master/LICENSE)
 
 (The BSD License)
 
@@ -462,7 +462,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
->>> uuid-2.0 (https://github.com/defunctzombie/node-uuid/blob/master/LICENSE.md)
+>>> uuid-2.0.1 (https://github.com/defunctzombie/node-uuid/blob/master/LICENSE.md)
 
 Copyright (c) 2010-2012 Robert Kieffer MIT License - http://opensource.org/licenses/mit-license.php
 
@@ -472,7 +472,7 @@ Copyright (c) 2010-2012 Robert Kieffer MIT License - http://opensource.org/licen
 
 Apache License, V2.0 is applicable to the following component(s).
 
->>> dockerode-2.2 (https://github.com/apocas/dockerode)
+>>> dockerode-2.2.2 (https://github.com/apocas/dockerode)
 
   Pedro Dias - @pedromdias
 
@@ -482,7 +482,7 @@ Apache License, V2.0 is applicable to the following component(s).
   Unless required by applicable law or agreed to in writing, software distributed under the license is distributed on an "as is" basis, without warranties or conditions of any kind, either express or implied. See the license for the specific language governing permissions and limitations under the license.)
 
 
->>> request-2.62 (https://github.com/request/request/blob/master/LICENSE)
+>>> request-2.62.0 (https://github.com/request/request/blob/master/LICENSE)
 
 Apache License
 

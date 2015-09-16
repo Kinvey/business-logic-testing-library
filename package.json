@@ -11,21 +11,21 @@
     "Mark van Seventer <mark@kinvey.com>"
   ],
   "dependencies": {
-    "async"     : "1.4.x",
+    "async"     : "1.4.2",
     "clone"     : "0.1.18",
-    "coffee-script": "1.10.x",
-    "config"    : "1.16.x",
-    "dockerode" : "2.2.x",
-    "request"   : "2.62.x",
+    "coffee-script": "1.10.0",
+    "config"    : "1.16.0",
+    "dockerode" : "2.2.2",
+    "request"   : "2.62.0",
     "rimraf"    : "2.2.8",
-    "uuid"      : "2.0.x"
+    "uuid"      : "2.0.1"
   },
   "devDependencies": {
-    "coffeelint" : "1.11.x",
-    "mocha"      : "2.3.x",
+    "coffeelint" : "1.11.1",
+    "mocha"      : "2.3.2",
     "proxyquire" : "1.0.1",
-    "should"     : "7.1.x",
-    "sinon"      : "1.16.x"
+    "should"     : "7.1.0",
+    "sinon"      : "1.16.1"
   },
   "scripts": {
     "pretest" : "coffeelint lib/ test/",
