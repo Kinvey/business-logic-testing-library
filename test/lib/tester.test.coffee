@@ -1,15 +1,18 @@
-# Copyright (c) 2014, Kinvey, Inc. All rights reserved.
 #
-# This software is licensed to you under the Kinvey terms of service located at
-# http://www.kinvey.com/terms-of-use. By downloading, accessing and/or using this
-# software, you hereby accept such terms of service  (and any agreement referenced
-# therein) and agree that you have read, understand and agree to be bound by such
-# terms of service and are of legal age to agree to such terms with Kinvey.
+# Copyright 2015 Kinvey, Inc.
 #
-# This software contains valuable confidential and proprietary information of
-# KINVEY, INC and is subject to applicable licensing agreements.
-# Unauthorized reproduction, transmission or distribution of this file and its
-# contents is a violation of applicable laws.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
 fs = require 'fs'
 path = require 'path'
@@ -53,12 +56,12 @@ describe 'Business Logic Tester / unit tests', () ->
 
     setTimeout () ->
       should.exist socketEventListeners['data']
-      socketEventListeners['data'](JSON.stringify({}) + '\n')  
+      socketEventListeners['data'](JSON.stringify({}) + '\n')
     , 5
 
   before (done) ->
     delete process.env.DOCKER_HOST
-    
+
     # create BL file structure
     fs.mkdirSync tempBlDirectoryName
 
@@ -409,7 +412,7 @@ describe 'Business Logic Tester / unit tests', () ->
 
       testModule.createClient options, (err, testerInstance) ->
         if err then return done err
-        
+
         tester = testerInstance
 
         fileName = path.join options.blRootPath, config.directories.pathToCustomEndpoints, "#{endpointName}.js"
@@ -614,7 +617,7 @@ describe 'Business Logic Tester / unit tests', () ->
 
         executeTesterMethodThroughMock tester, 'runFunction', testFunctionString, {}, {}, (parsedJSONTask) ->
           parsedJSONTask.blScript.should.eql commonFiles.join('\n;') + '\n;' + testFunctionString
-          
+
           # cleanup
           commonFileDir = path.join tempBlDirectoryName, config.directories.pathToCommonFiles
           rimraf commonFileDir, () ->

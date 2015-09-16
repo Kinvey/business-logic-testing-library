@@ -1,6 +1,6 @@
 # Helper module for testing Kinvey Business Logic
 
-This module provides an easy way to connect to a Kinvey Business Logic (BL) instance running on docker. It is up to the user to download, configure and start the docker image itself before running code using this module.
+This module provides an easy way to connect to a Kinvey Business Logic (BL) instance running on docker. It is up to the user to download, configure and start the docker image itself before running code using this module. Two [utility](#Utilities) functions are provided to automate setting up the docker image.
 
 The module serves two purposes:
 
@@ -43,6 +43,9 @@ In order to use the module, you will first need to create and configure a client
     * [addHeader](#addheadername-contents-1)
     * [setStatusCode](#setstatuscodecode)
     * [toJSON](#tojson-1)
+* [Utilities](#utilities)
+  * [Setup](#setup)
+  * [Teardown](#teardown)
 
 ## Usage
 
@@ -650,3 +653,66 @@ console.log(responseObject.toJSON());
 }
 */
 ```
+
+## Utilities
+
+### Setup
+
+Start the required Docker images and return a tester instance. Prior to running this method, make sure Docker is installed properly. The set-up method expects a [`jsonConfiguration` object](createclientjsonconfiguration-callback) as first parameter. The set-up method is best used in a before-hook of your test suite.
+
+##### Example
+```
+// Assuming Mocha.
+var tester = require('business-logic-testing-library');
+
+var options = {
+  blRootPath: '/Users/JohnDoe/Documents/kinvey/business-logic',
+  environmentID: 'MyAwesomeEnvironment'
+}
+
+before(function(done) {
+  tester.util.setup(options, function(err, client) {
+    if(err) {
+      // handle error
+    }
+
+    // client...
+  });
+});
+```
+
+### Teardown
+
+Currently, the teardown method is an empty method. This might change in the future.
+
+##### Example
+```
+// Assuming Mocha.
+var tester = require('business-logic-testing-library');
+
+var options = {
+  blRootPath: '/Users/JohnDoe/Documents/kinvey/business-logic',
+  environmentID: 'MyAwesomeEnvironment'
+}
+
+before(...);
+
+after(function(done) {
+  tester.util.teardown(options, done);
+});
+```
+
+## License
+    Copyright 2015 Kinvey, Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.

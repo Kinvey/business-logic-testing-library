@@ -1,15 +1,18 @@
-# Copyright (c) 2014, Kinvey, Inc. All rights reserved.
-# 
-# This software is licensed to you under the Kinvey terms of service located at
-# http://www.kinvey.com/terms-of-use. By downloading, accessing and/or using this
-# software, you hereby accept such terms of service  (and any agreement referenced
-# therein) and agree that you have read, understand and agree to be bound by such
-# terms of service and are of legal age to agree to such terms with Kinvey.
-# 
-# This software contains valuable confidential and proprietary information of
-# KINVEY, INC and is subject to applicable licensing agreements.
-# Unauthorized reproduction, transmission or distribution of this file and its
-# contents is a violation of applicable laws.
+#
+# Copyright 2015 Kinvey, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
 should = require 'should'
 sinon = require 'sinon'
@@ -25,6 +28,9 @@ describe 'Business Logic Tester / data store', () ->
 
   mockRequest =
     post: sinon.stub()
+
+
+  baseUrl = "http://#{configuration.containerHostOrIP}:#{configuration.proxyPort}"
 
   before (done) ->
     KinveyDataStore = proxyquire '../../lib/data-store', { request: mockRequest }
@@ -58,19 +64,19 @@ describe 'Business Logic Tester / data store', () ->
 
       dataStore = new KinveyDataStore configuration
       dataStore.importCollectionData 'testCollection', dataToInsert, false, (err) ->
+
         should.not.exist err
         postArgs = mockRequest.post.args[0][0]
-        postArgs.url.should.eql configuration.containerHostOrIP + '/testCollection/insert'
-        postArgs.port.should.eql configuration.proxyPort
-        postArgs.json.should.eql dataToInsert
+        postArgs.url.should.eql baseUrl + '/collectionAccess/testCollection/insert'
+        postArgs.json.should.eql { entity: dataToInsert }
         done()
-    
+
     it 'if data is not specified, inserts an empty object', (done) ->
       dataStore = new KinveyDataStore configuration
       dataStore.importCollectionData 'testCollection', null, false, (err) ->
         should.not.exist err
         postArgs = mockRequest.post.args[0][0]
-        postArgs.json.should.eql {}
+        postArgs.json.should.eql { entity: { } }
         done()
 
     it 'supports the clearBeforeInsert parameter', (done) ->
@@ -80,14 +86,12 @@ describe 'Business Logic Tester / data store', () ->
       dataStore.importCollectionData 'testCollection', dataToInsert, true, (err) ->
         should.not.exist err
         removeArgs = mockRequest.post.args[0][0]
-        removeArgs.url.should.eql configuration.containerHostOrIP + '/testCollection/remove'
-        removeArgs.port.should.eql configuration.proxyPort
-        removeArgs.json.should.eql {}
+        removeArgs.url.should.eql baseUrl + '/collectionAccess/testCollection/remove'
+        removeArgs.json.should.eql { query: { } }
 
         insertArgs = mockRequest.post.args[1][0]
-        insertArgs.url.should.eql configuration.containerHostOrIP + '/testCollection/insert'
-        insertArgs.port.should.eql configuration.proxyPort
-        insertArgs.json.should.eql dataToInsert
+        insertArgs.url.should.eql baseUrl + '/collectionAccess/testCollection/insert'
+        insertArgs.json.should.eql { entity: dataToInsert }
         done()
 
     it 'if clearBeforeInsert is not specified, defaults to false', (done) ->
@@ -97,9 +101,8 @@ describe 'Business Logic Tester / data store', () ->
       dataStore.importCollectionData 'testCollection', dataToInsert, (err) ->
         should.not.exist err
         insertArgs = mockRequest.post.args[0][0]
-        insertArgs.url.should.eql configuration.containerHostOrIP + '/testCollection/insert'
-        insertArgs.port.should.eql configuration.proxyPort
-        insertArgs.json.should.eql dataToInsert
+        insertArgs.url.should.eql baseUrl + '/collectionAccess/testCollection/insert'
+        insertArgs.json.should.eql { entity: dataToInsert }
         done()
 
   describe 'removing collection data', ->
@@ -117,9 +120,8 @@ describe 'Business Logic Tester / data store', () ->
       dataStore.removeCollectionData 'testCollection', query, (err) ->
         should.not.exist err
         postArgs = mockRequest.post.args[0][0]
-        postArgs.url.should.eql configuration.containerHostOrIP + '/testCollection/remove'
-        postArgs.port.should.eql configuration.proxyPort
-        postArgs.json.should.eql query
+        postArgs.url.should.eql baseUrl + '/collectionAccess/testCollection/remove'
+        postArgs.json.should.eql { query: query }
         done()
 
     it 'if query is not specified, an empty query is used', (done) ->
@@ -127,7 +129,7 @@ describe 'Business Logic Tester / data store', () ->
       dataStore.removeCollectionData 'testCollection', null, (err) ->
         should.not.exist err
         postArgs = mockRequest.post.args[0][0]
-        postArgs.json.should.eql {}
+        postArgs.json.should.eql { query: { } }
         done()
 
   describe 'retrieving collection data', ->
@@ -145,9 +147,8 @@ describe 'Business Logic Tester / data store', () ->
       dataStore.getCollectionData 'testCollection', query, (err) ->
         should.not.exist err
         postArgs = mockRequest.post.args[0][0]
-        postArgs.url.should.eql configuration.containerHostOrIP + '/testCollection/find'
-        postArgs.port.should.eql configuration.proxyPort
-        postArgs.json.should.eql query
+        postArgs.url.should.eql baseUrl + '/collectionAccess/testCollection/find'
+        postArgs.json.should.eql { query: query }
         done()
 
     it 'if query is not specified, an empty query is used', (done) ->
@@ -155,5 +156,5 @@ describe 'Business Logic Tester / data store', () ->
       dataStore.getCollectionData 'testCollection', null, (err) ->
         should.not.exist err
         postArgs = mockRequest.post.args[0][0]
-        postArgs.json.should.eql {}
+        postArgs.json.should.eql { query: { } }
         done()
