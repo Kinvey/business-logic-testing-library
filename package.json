@@ -1,7 +1,7 @@
 {
-  "name"         : "business-logic-tester",
+  "name"         : "kinvey-business-logic-testing-library",
   "version"      : "0.1.0",
-  "description"  : "Business Logic Tester",
+  "description"  : "Kinvey's Business Logic Testing Library",
   "homepage"     : "http://www.kinvey.com",
   "bugs"         : "https://github.com/Kinvey/business-logic-testing-library/issues",
   "license"      : "Apache-2.0",
