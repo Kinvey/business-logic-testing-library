@@ -1,6 +1,6 @@
 {
   "name"         : "kinvey-business-logic-testing-library",
-  "version"      : "0.1.0",
+  "version"      : "0.1.1",
   "description"  : "Kinvey's Business Logic Testing Library",
   "homepage"     : "http://www.kinvey.com",
   "bugs"         : "https://github.com/Kinvey/business-logic-testing-library/issues",

@@ -25,7 +25,7 @@ tester = require './tester.coffee'
 docker = new Docker()
 
 # Helper to start a container with the specified Docker image.
-startDockerContainer = (imageName, callback) ->
+startDockerContainer = (imageName, tag, callback) ->
   # Determine if a container with the specified image is already running.
   docker.listContainers (err, containers) ->
     if err? then callback err
@@ -36,14 +36,18 @@ startDockerContainer = (imageName, callback) ->
 
       # No container available, create a new one.
       async.waterfall [
-        # Pull latest image, and process pull stream.
-        docker.pull.bind docker, "#{imageName}:latest"
+        # Pull image, and process pull stream.
+        docker.pull.bind docker, "#{imageName}:#{tag}"
         docker.modem.followProgress.bind docker.modem
 
         # Create and start a new container with the pulled image.
         (data, callback) -> docker.createContainer { Image: imageName }, callback
         (container, callback) -> container.start { PublishAllPorts: true }, callback
-      ], callback
+      ], (err, result) ->
+        # TODO Replace the timeout with something more reliable.
+        setTimeout () ->
+          callback err, result
+        , 1000
 
 # Utility to set-up test suite.
 setup = (options, callback) ->
@@ -58,17 +62,14 @@ setup = (options, callback) ->
         callback err # Continue.
 
     # Set-up Docker containers.
-    proxy  : startDockerContainer.bind null, 'kinvey/bl-mock-proxy'
-    runner : startDockerContainer.bind null, 'kinvey/blrunner'
+    proxy  : startDockerContainer.bind null, 'kinvey/bl-mock-proxy', 'latest'
+    runner : startDockerContainer.bind null, 'kinvey/blrunner', 'v0.3.11'
 
     # Set-up tester.
     client: tester.createClient.bind tester, options
   }, (err, results) ->
     # Pass the tester client back to the test suite.
-    # TODO Replace the timeout with something more reliable.
-    setTimeout () ->
-      callback err, results.client
-    , 1000
+    callback err, results.client
 
 # Utility to teardown test suite.
 teardown = (options, callback) ->
