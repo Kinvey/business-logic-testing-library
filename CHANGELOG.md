@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.1.2 (2015-09-22)
+* Use the right Docker image:tag.
+
 ### 0.1.1 (2015-09-22)
 * A specific tag is now used when pulling Docker images.
 * Internal improvements.
