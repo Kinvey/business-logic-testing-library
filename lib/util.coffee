@@ -25,7 +25,7 @@ tester = require './tester.coffee'
 docker = new Docker()
 
 # Helper to start a container with the specified Docker image.
-startDockerContainer = (imageName, tag, callback) ->
+startDockerContainer = (imageName, callback) ->
   # Determine if a container with the specified image is already running.
   docker.listContainers (err, containers) ->
     if err? then callback err
@@ -37,7 +37,7 @@ startDockerContainer = (imageName, tag, callback) ->
       # No container available, create a new one.
       async.waterfall [
         # Pull image, and process pull stream.
-        docker.pull.bind docker, "#{imageName}:#{tag}"
+        docker.pull.bind docker, imageName
         docker.modem.followProgress.bind docker.modem
 
         # Create and start a new container with the pulled image.
@@ -62,8 +62,8 @@ setup = (options, callback) ->
         callback err # Continue.
 
     # Set-up Docker containers.
-    proxy  : startDockerContainer.bind null, 'kinvey/bl-mock-proxy', 'latest'
-    runner : startDockerContainer.bind null, 'kinvey/blrunner', 'v0.3.11'
+    proxy  : startDockerContainer.bind null, 'kinvey/bl-mock-proxy:latest'
+    runner : startDockerContainer.bind null, 'kinvey/blrunner:v0.3.11'
 
     # Set-up tester.
     client: tester.createClient.bind tester, options
