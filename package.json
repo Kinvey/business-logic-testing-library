@@ -37,5 +37,5 @@
     "test-data-store"       : "mocha test/lib/data-store.test.coffee",
     "test-util"             : "mocha test/lib/util.test.coffee"
   },
-  "engines": { "node": "= 0.10.x" }
+  "engines": { "node": ">= 0.10.x" }
 }
