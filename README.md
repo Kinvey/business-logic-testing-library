@@ -455,7 +455,7 @@ client.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResu
 
 #### setParams(jsonObject)
 
-Set the `params` property of the request object, which corresponds to the parameters of the incoming HTTP request. Accepts a JSON object in which keys are parameter names and values are their contents.
+Set the `params` property of the request object, which corresponds to the parameters of the incoming HTTP request. Accepts a JSON object in which keys are parameter names and values are their contents. For `GET`, `PUT`, and `DELETE` requests, you can use `id` (not: `_id`) as parameter name to specify an entity id. For `POST`, specify an `_id` in the [request body](#example).
 
 ##### Example
 
@@ -466,6 +466,7 @@ requestObject.setParams({ 'query': { myField: 'myValue' }});
 
 client.runCustomEndpoint('myEndpoint', requestObject, {}, function(error, blResult) {});
 ```
+
 
 #### addParam(name, contents)
 
