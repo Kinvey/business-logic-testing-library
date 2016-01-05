@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.1.3
+* Bugfix: parse query as string instead of object.
+* Updated copyright to 2016.
+
 ### 0.1.2 (2015-09-22)
 * Use the right Docker image:tag.
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Kinvey, Inc.
+# Copyright 2016 Kinvey, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,4 +38,15 @@ describe 'Business Logic Tester / integration tests', () ->
       responseFromBL.response.statusCode.should.eql 200
       responseFromBL.response.body.should.have.property 'testPassed'
       responseFromBL.response.body.testPassed.should.be.true
+      done()
+
+  it 'stringifies the request query.', (done) ->
+    requestObject = testModule.createMockRequest()
+    requestObject.setParams { query: { foo: 'bar' } }
+    functionString = 'function onRequest(request, response, modules) { response.body = JSON.parse(request.params.query); response.complete(); }'
+    tester.runFunction functionString, requestObject, {}, (err, responseFromBL) ->
+      should.not.exist err
+      responseFromBL.response.should.have.properties 'body', 'statusCode'
+      responseFromBL.response.statusCode.should.eql 200
+      responseFromBL.response.body.should.have.property 'foo', 'bar'
       done()

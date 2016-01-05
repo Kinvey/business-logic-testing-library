@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Kinvey, Inc.
+# Copyright 2016 Kinvey, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -90,6 +90,10 @@ runBLCodeString = (configuration, blCodeString, isCollectionHook, collectionOrEn
   request.tempObjectStore ?= {}
   request.username ?= 'testUsername'
   request.entityId = request.params.id ? request.params.userid
+
+  # stringify query
+  if request.params.query?
+    request.params.query = JSON.stringify request.params.query
 
   unless request.method?
     switch blFunctionName
