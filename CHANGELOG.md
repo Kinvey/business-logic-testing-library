@@ -1,6 +1,6 @@
 # Changelog
 
-### 0.1.3
+### 0.1.3 (2016-01-05)
 * Bugfix: parse query as string instead of object.
 * Updated copyright to 2016.
 
