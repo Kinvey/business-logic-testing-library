@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.1.4
+* Abstracted docker image names from `lib/util.coffee` to `config/`.
+* Added *BL Modules* usage example to `README.md`.
+* Updated `blrunner` docker image version to `v0.4.8`.
+
 ### 0.1.3 (2016-01-05)
 * Bugfix: parse query as string instead of object.
 * Updated copyright to 2016.

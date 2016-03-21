@@ -16,6 +16,7 @@
 
 # Package modules.
 async  = require 'async'
+config = require 'config'
 Docker = require 'dockerode'
 
 # Local modules.
@@ -62,8 +63,8 @@ setup = (options, callback) ->
         callback err # Continue.
 
     # Set-up Docker containers.
-    proxy  : startDockerContainer.bind null, 'kinvey/bl-mock-proxy:latest'
-    runner : startDockerContainer.bind null, 'kinvey/blrunner:v0.3.11'
+    proxy  : startDockerContainer.bind null, config.dockerImage.proxy
+    runner : startDockerContainer.bind null, config.dockerImage.runner
 
     # Set-up tester.
     client: tester.createClient.bind tester, options

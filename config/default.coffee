@@ -20,6 +20,11 @@ module.exports =
   runnerPort: 7000
   proxyPort: 2845
 
+  # Docker images.
+  dockerImage:
+    proxy  : 'kinvey/bl-mock-proxy:latest'
+    runner : 'kinvey/blrunner:v0.4.8'
+
   directories:
     pathToCommonFiles: 'common'
     pathToCollections: 'collections'

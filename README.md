@@ -330,6 +330,41 @@ tester.createClient(options, function(err, client) {
 });
 ```
 
+**BL Modules**
+
+When testing, the `email`, `logger`, and `push` modules do not send out "real" e-mails or push notifications. Instead, the details of an e-mail, log, or push message are stored inside the following collections.
+
+* emails: `_outgoingEmailMessages`,
+* logs: `_outgoingPushMessages`,
+* push: `_blLogs`.
+
+Retrieve these details as follows:
+
+```javascript
+var tester = require('business-logic-testing-library');
+var options = { ... };
+
+tester.createClient(options, function(err, client) {
+  if (err) {
+    // handle error
+  }
+
+  client.runCustomEndpoint('myEndpoint', { }, { }, function(error, blResult) {
+    if (err) {
+      // handle error
+    }
+
+    client.dataStore.getCollectionData('_blLogs', { }, function(err, logs) {
+      if (err) {
+        // handle error
+      }
+
+      // at this point, the logs variable contains the logs recorded while executing the custom endpoint.
+    });
+  });
+});
+```
+
 ## Common code
 
 All methods support common code defined within the BL CLI folder structure. When any of the `run...` methods described above are called, the testing module will read the contents of any common code files contained within the `_blRootPath_/common/` directory (where `_blRootPath_` is the path to the root of the BL folder structure, as specified in the options to the [createClient](createclientjsonconfiguration-callback) method). Any common code will be executed before running your collection hook/custom endpoint/function code.
