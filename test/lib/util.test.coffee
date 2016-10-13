@@ -43,7 +43,7 @@ describe 'Business Logic Tester / utility tests', ->
     DockerMock.prototype.listContainers.callsArgWithAsync  0, null, [ ]
     DockerMock.prototype.ping.callsArgAsync 0
     DockerMock.prototype.pull.callsArgWithAsync 1, null, 'stream'
-    ContainerMock.prototype.start.callsArgAsync 1
+    ContainerMock.prototype.start.callsArgAsync 0
   afterEach 'stubs', ->
     DockerMock.prototype.modem.followProgress.reset()
     DockerMock.prototype.createContainer.reset()

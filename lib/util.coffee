@@ -42,8 +42,8 @@ startDockerContainer = (imageName, callback) ->
         docker.modem.followProgress.bind docker.modem
 
         # Create and start a new container with the pulled image.
-        (data, callback) -> docker.createContainer { Image: imageName }, callback
-        (container, callback) -> container.start { PublishAllPorts: true }, callback
+        (data, callback) -> docker.createContainer { Image: imageName, HostConfig: { PublishAllPorts: true } }, callback
+        (container, callback) -> container.start callback
       ], (err, result) ->
         # TODO Replace the timeout with something more reliable.
         setTimeout () ->
