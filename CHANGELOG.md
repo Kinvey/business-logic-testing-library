@@ -1,5 +1,7 @@
 # Changelog
 
+### 0.1.5
+
 ### 0.1.4 (2016-10-13)
 * Bugfix: pass HostConfig when creating rather than when starting a Docker container, to work with Docker 1.12 and above.
 * Abstracted docker image names from `lib/util.coffee` to `config/`.
