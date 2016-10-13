@@ -23,7 +23,7 @@ module.exports =
   # Docker images.
   dockerImage:
     proxy  : 'kinvey/bl-mock-proxy:latest'
-    runner : 'kinvey/blrunner:v0.4.8'
+    runner : 'kinvey/blrunner:v0.5.2'
 
   directories:
     pathToCommonFiles: 'common'
