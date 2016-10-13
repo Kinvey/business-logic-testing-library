@@ -1,9 +1,11 @@
 # Changelog
 
 ### 0.1.4
+* Bugfix: pass HostConfig when creating rather than when starting a Docker container, to work with Docker 1.12 and above.
 * Abstracted docker image names from `lib/util.coffee` to `config/`.
 * Added *BL Modules* usage example to `README.md`.
-* Updated `blrunner` docker image version to `v0.4.8`.
+* Updated `blrunner` docker image version to `v0.5.2`.
+* Updated dockerode version.
 
 ### 0.1.3 (2016-01-05)
 * Bugfix: parse query as string instead of object.
